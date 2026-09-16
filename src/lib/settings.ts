@@ -74,26 +74,20 @@ export function resolveConfig(
     provider,
     providerName: provider.id === CUSTOM_ID && extras.customName ? extras.customName : provider.name,
     apiKey: overrides.apiKey?.trim() || defaults.apiKey,
-    baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl, provider),
+    baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl),
     model,
     effort,
     jsonMode: provider.id === CUSTOM_ID ? (extras.customJsonMode ?? provider.jsonMode) : provider.jsonMode,
   };
 }
 
-/**
- * Makes a typed API URL usable: adds a missing http(s)://, drops trailing slashes and,
- * for local servers, adds the /v1 path their OpenAI-compatible API lives under.
- */
-export function normalizeBaseUrl(raw: string, provider: AIConfig["provider"]): string {
-  let url = raw.trim().replace(/\/+$/, "");
+/** Makes a typed API URL usable: adds a missing http(s):// and drops trailing slashes. */
+export function normalizeBaseUrl(raw: string): string {
+  const url = raw.trim().replace(/\/+$/, "");
   if (!url) return "";
-  if (!/^[a-z][a-z\d+.-]*:\/\//i.test(url)) {
-    const local = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
-    url = `${local ? "http" : "https"}://${url}`;
-  }
-  if (provider.group === "local" && !/\/v1$/i.test(url)) url += "/v1";
-  return url;
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(url)) return url;
+  const localHost = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
+  return `${localHost ? "http" : "https"}://${url}`;
 }
 
 function isWebAddress(value: string): boolean {

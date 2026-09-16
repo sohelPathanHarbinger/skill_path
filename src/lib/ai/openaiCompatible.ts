@@ -49,9 +49,7 @@ async function sendTo(config: AIConfig, url: string, init: RequestInit): Promise
     if (init.signal?.aborted) throw err;
     throw new AIError(
       "network",
-      config.provider.group === "local"
-        ? `Couldn't reach ${config.providerName} at ${config.baseUrl}. Is ${config.providerName} installed and running? If it is, it may be blocking requests from this page (CORS): see its setup tips.`
-        : `Couldn't reach ${config.providerName}. Check your internet connection. If it keeps failing, the service may be blocking requests from browsers (CORS).`,
+      `Couldn't reach ${config.providerName} at ${config.baseUrl}. Check your internet connection and the API URL. If it keeps failing, the service may be blocking requests from browsers (CORS).`,
     );
   }
   // A web page instead of JSON: the URL points at a website (often this app itself), not an AI API.
@@ -87,7 +85,11 @@ async function errorFromResponse(config: AIConfig, response: Response): Promise<
     case 403:
       return new AIError("permission", `${name} refused access to ${config.model}.${suffix}`, detail);
     case 404:
-      return modelNotFound(config, detail);
+      return new AIError(
+        "not_found",
+        `${name} couldn't find the model "${config.model}". Pick another model in Settings (try Load models).`,
+        detail,
+      );
     case 429:
       return new AIError("rate_limit", `${name}'s rate limit or free quota was reached. Wait a minute and try again.${suffix}`, detail);
   }
@@ -98,22 +100,6 @@ async function errorFromResponse(config: AIConfig, response: Response): Promise<
     return new AIError("auth", `${name} rejected the API key. Check it in Settings.${suffix}`, detail);
   }
   return new AIError("bad_request", `${name} rejected the request: ${detail || response.statusText || response.status}`, detail);
-}
-
-function modelNotFound(config: AIConfig, detail: string): AIError {
-  const name = config.providerName;
-  if (config.provider.group !== "local") {
-    return new AIError("not_found", `${name} couldn't find the model "${config.model}". Pick another model in Settings (try Load models).`, detail);
-  }
-  // Local model names are lowercase without spaces ("llama3.1"), so suggest that spelling.
-  const guess = config.model.toLowerCase().replace(/\s+/g, "");
-  const hint = guess !== config.model ? ` Model names are lowercase without spaces, e.g. "${guess}".` : "";
-  const pull = config.provider.id === "ollama" ? `, or download it first with "ollama pull ${guess}"` : "";
-  return new AIError(
-    "not_found",
-    `${name} doesn't have a model called "${config.model}".${hint} Choose one of your installed models (Load models)${pull}.`,
-    detail,
-  );
 }
 
 /** The simpler request to try after a rejection, or null when there's nothing left to simplify. */
@@ -305,18 +291,6 @@ function modelIds(list: ModelList): string[] {
 }
 
 export async function compatListModels(config: AIConfig): Promise<string[]> {
-  try {
-    const response = await send(config, "/models", { method: "GET" });
-    return modelIds((await response.json()) as ModelList);
-  } catch (err) {
-    // Older Ollama versions only list models on their native API.
-    const tryNative = config.provider.id === "ollama" && err instanceof AIError && (err.kind === "not_found" || err.kind === "setup");
-    if (!tryNative) throw err;
-    try {
-      const response = await sendTo(config, new URL("/api/tags", config.baseUrl).href, { method: "GET" });
-      return modelIds((await response.json()) as ModelList);
-    } catch {
-      throw err;
-    }
-  }
+  const response = await send(config, "/models", { method: "GET" });
+  return modelIds((await response.json()) as ModelList);
 }

@@ -34,14 +34,10 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
   const loaded = loadedModels[provider.id];
   const suggested = provider.models.map((m) => m.id);
   const allModels = [...suggested, ...(loaded ?? []).filter((id) => !suggested.includes(id))];
-  // Local servers: show what's actually installed. Others: the suggestions, plus a short loaded list.
-  const chips =
-    provider.group === "local" && loaded
-      ? loaded.map((id) => ({ id, label: id }))
-      : [
-          ...provider.models,
-          ...(loaded && loaded.length <= 12 ? loaded.filter((id) => !suggested.includes(id)).map((id) => ({ id, label: id })) : []),
-        ];
+  const chips = [
+    ...provider.models,
+    ...(loaded && loaded.length <= 12 ? loaded.filter((id) => !suggested.includes(id)).map((id) => ({ id, label: id })) : []),
+  ];
 
   async function loadModels() {
     setLoading(true);
@@ -50,11 +46,7 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
     try {
       const found = await listModels(current);
       setLoadedModels((prev) => ({ ...prev, [current.provider.id]: found }));
-      if (!found.length) {
-        setStatus(
-          `${current.providerName} has no models yet.${current.provider.id === "ollama" ? ' Download one first, e.g. "ollama pull llama3.1".' : ""}`,
-        );
-      }
+      if (!found.length) setStatus(`${current.providerName} returned no models.`);
     } catch (err) {
       setStatus(describeError(err));
     } finally {
@@ -62,8 +54,8 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
     }
   }
 
-  // Local servers list their installed models for free; after a "model not found" error, list them for any provider.
-  const autoLoad = (autoLoadModels || provider.group === "local") && !needsKey && Boolean(config.baseUrl);
+  // After a "model not found" error, list what this provider actually offers.
+  const autoLoad = autoLoadModels && !needsKey && Boolean(config.baseUrl);
   useEffect(() => {
     if (autoLoad && !loadedModels[provider.id]) void loadModels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,7 +85,6 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
     if (next === savedUrl) return;
     saveForProvider({ baseUrl: next || undefined });
     setLoadedModels((prev) => ({ ...prev, [provider.id]: [] }));
-    if (provider.group === "local") void loadModels();
   }
 
   function saveKey() {
@@ -189,7 +180,7 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
             onChange={(e) => setBaseUrl(e.target.value)}
             onBlur={(e) => commitUrl(e.target.value)}
             onKeyDown={onEnter(() => commitUrl(baseUrl))}
-            placeholder={provider.baseUrl ? `Default: ${provider.baseUrl}` : "https://your-service.example.com/v1"}
+            placeholder="https://your-service.example.com/v1"
             spellCheck={false}
             className={`${field} font-mono`}
           />
@@ -224,18 +215,6 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
             </a>
           )}
         </div>
-      )}
-
-      {provider.group === "local" && provider.notes && (
-        <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
-          <span className="font-medium text-slate-800">Setup: </span>
-          {provider.notes}{" "}
-          {provider.keyUrl && (
-            <a href={provider.keyUrl} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 underline">
-              Download {provider.name} ↗
-            </a>
-          )}
-        </p>
       )}
 
       {status && <p className="text-xs text-rose-700">{status}</p>}

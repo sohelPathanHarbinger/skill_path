@@ -2,13 +2,14 @@
 
 A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation.
 
-It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effort) is the default. Learners can switch in the app's **Settings** popup to Google Gemini, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, to a local AI (Ollama, LM Studio), or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
+It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effort) is the default. Learners can switch in the app's **Settings** popup to Google Gemini, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
 
 1. **Skill check.** An adaptive conversation of about 6–10 questions (multiple choice, short answer, code, experience). Each question depends on the previous answers: it gets harder after correct ones and easier after wrong ones.
 2. **Skill profile.** Overall level, mastery per sub-topic (0–100), strengths, gaps and misconceptions.
 3. **Learning plan.** Ordered modules that skip what the learner already knows and start with the gaps that block their goal.
-4. **Lessons.** A streamed tutor chat per module that explains, gives examples, asks questions and adapts ("explain another way", "go faster", …).
-5. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
+4. **Courses & materials.** Video courses, websites, books, docs and practice on different platforms, picked for the learner's goal and gaps.
+5. **Lessons.** A streamed tutor chat per module that explains, gives examples, asks questions and adapts ("explain another way", "go faster", …).
+6. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
 
 ---
 
@@ -17,7 +18,7 @@ It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effo
 ### Prerequisites
 
 - **Node.js 20.19+ or 22.12+** (check with `node --version`)
-- An API key for at least one AI provider, or a local AI such as [Ollama](https://ollama.com). No key yet? The quickest free start is a [Google Gemini key](https://aistudio.google.com/apikey) or a [Groq key](https://console.groq.com/keys).
+- An API key for at least one AI provider. No key yet? The quickest free start is a [Google Gemini key](https://aistudio.google.com/apikey) or a [Groq key](https://console.groq.com/keys).
 
 ### 1. Install and start
 
@@ -35,7 +36,7 @@ When the app opens, the **AI settings** popup appears:
 | Setting | What it does |
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
-| **API URL** | Only for local AIs and **Custom**: where the service runs |
+| **API URL** | Only for **Custom**: where the service lives |
 | **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
@@ -57,7 +58,7 @@ Copy-Item .env.example .env.local
 ```
 
 ```
-VITE_AI_PROVIDER=anthropic        # the default AI (see the table below for ids)
+VITE_AI_PROVIDER=anthropic        # the default AI (see the tables below for ids)
 VITE_AI_MODEL=                    # empty = that AI's recommended model
 VITE_AI_EFFORT=low
 VITE_ANTHROPIC_API_KEY=sk-ant-...
@@ -104,16 +105,9 @@ Free tiers, credits and model names change often. The details below were checked
 | **DeepSeek** (`deepseek`) | Among the lowest prices; top up a small balance | `deepseek-v4-flash` |
 | **xAI Grok** (`xai`) | Check the xAI console for any promotional credits | `grok-4.3` |
 
-### Local (free, runs on your computer)
-
-| Provider (`id`) | Setup |
-|---|---|
-| **Ollama** (`ollama`) | Install [Ollama](https://ollama.com/download), run `ollama pull llama3.2` (or any model), keep it running, then click **Load models**. If requests are blocked, set `OLLAMA_ORIGINS=http://localhost:5173` and restart Ollama |
-| **LM Studio** (`lmstudio`) | Load a model, start the server in the Developer tab, and turn on **Enable CORS** in Server Settings. Then click **Load models** |
-
 ### Custom
 
-Pick **Custom (OpenAI-compatible)** for any service not listed, such as a company AI gateway, LiteLLM, vLLM or another provider. Enter:
+Pick **Custom (OpenAI-compatible)** for any service not listed, such as a company AI gateway or another provider. Enter:
 
 - **API URL**: the part before `/chat/completions`, e.g. `https://my-gateway.example.com/v1`
 - **Model** and, if needed, **API key**
@@ -121,11 +115,13 @@ Pick **Custom (OpenAI-compatible)** for any service not listed, such as a compan
 
 The service must allow requests from browsers (CORS).
 
+> This version of SkillPath talks to hosted AI services only. There is no support for AI running on your own computer.
+
 ### Which one should I pick?
 
 - **Best teaching quality:** Claude Opus 5 or Sonnet 5, or OpenAI GPT-5.5.
 - **Free and good:** Google Gemini (`gemini-3.8-flash`) or Groq (`openai/gpt-oss-120b`).
-- **Private / offline:** Ollama or LM Studio, with a model of 8B parameters or more for usable tutoring.
+- **Cheapest paid:** DeepSeek, or Claude Haiku 4.5.
 
 Smaller free models may sometimes produce shallower assessments. SkillPath checks every structured reply and retries automatically when a model returns the wrong format.
 
@@ -144,11 +140,11 @@ On the home page, fill in **What do you want to learn?**:
 | **Skill or technology** | Type one, or click a suggestion chip | `Python` |
 | **What's your goal?** | What you want to be able to do. This shapes the whole plan. | `Build REST APIs for my team's internal tools` |
 | **What have you done with it so far?** | Your honest starting point | `Nothing yet, but I know JavaScript well` |
-| **Which AI should teach you?** | Pick the AI provider and model. The model suggestions follow the provider, and a key field appears if that provider needs one. For Ollama / LM Studio it lists the models installed on your computer | `Groq` · `openai/gpt-oss-120b` |
+| **Which AI should teach you?** | Pick the AI provider and model. The model suggestions follow the provider, and a key field appears if that provider needs one | `Groq` · `openai/gpt-oss-120b` |
 
 Click **Start skill check →**. It stays disabled until the chosen AI is ready, for example until a key is added. What you typed is kept if you leave the page or something goes wrong, and it clears once your first question has loaded.
 
-> **If the AI has a problem** (wrong key, a model that isn't installed, a used-up free quota, …), the error message offers **Change AI or model** on the spot. Pick another model or provider, then click **Try again**. This works on every page: skill check, plan building, lessons and quizzes.
+> **If the AI has a problem** (wrong key, unknown model, a used-up free quota, …), the error message offers **Change AI or model** on the spot. Pick another model or provider, then click **Try again**. This works on every page: skill check, plan building, lessons and quizzes.
 
 ### Step 2 — Take the skill check (about 5–10 minutes)
 
@@ -208,7 +204,7 @@ Work through the modules in order. The dashboard shows your progress, best quiz 
 ### Coming back later
 
 - Everything saves automatically. Close the tab and come back any time: your tracks are listed under **Your learning tracks** on the home page, and a half-finished skill check or lesson picks up where you left off.
-- **Retake skill check** (bottom of the dashboard) starts the track over with a new assessment and plan. This clears that track's lessons and quiz results.
+- **Retake skill check** (bottom of the dashboard) starts the track over with a new assessment and plan. This clears that track's lessons, quiz results and suggested materials.
 - **Delete track** removes a track entirely.
 - You can switch AI, model or effort in **Settings** at any point, even mid-course. The next request uses the new choice.
 
@@ -239,25 +235,30 @@ src/
       json.ts              reads JSON out of model replies and validates it
       errors.ts            one error type with learner-friendly messages for every provider
     settings.ts            settings in use: Settings-popup choices on top of the defaults
-    learning.ts            the AI tasks: skill check, profile, plan, tutor, quizzes
+    learning.ts            the AI tasks: skill check, profile, plan, resources, tutor, quizzes
     prompts.ts             system prompts + learner-context builders (the "teaching brain")
     schemas.ts             Zod schemas for the structured (JSON) replies
-    types.ts, storage.ts, trackStore.ts, progress.ts   data model and persistence
-  components/              React screens: SettingsDialog, Home, AssessmentView, BuildingView, Dashboard, ModuleView, TutorChat, QuizPanel
-  hooks/                   hash router, useTrack, useSettings
+    resources.ts           course platforms and how to link to them
+    types.ts, storage.ts, trackStore.ts, trackDraft.ts, progress.ts   data model and persistence
+  components/              React screens: SettingsDialog, AIQuickSwitch, AIErrorPanel, Home,
+                           AssessmentView, BuildingView, Dashboard, ResourcesPanel, ModuleView,
+                           TutorChat, QuizPanel
+  hooks/                   hash router, useTrack, useSettings, useSettingsDialog
 ```
 
 How it stays reliable across very different AIs:
 
-- **Structured replies.** Assessment turns, profiles, plans, quizzes and grades must be JSON matching a Zod schema. Providers that support it get the schema enforced by their API (`json_schema`). Others get JSON mode or the schema in the prompt. Every reply is validated, and a model that returns the wrong shape is shown its mistake and asked to correct it (up to twice).
+- **Structured replies.** Assessment turns, profiles, plans, resource lists, quizzes and grades must be JSON matching a Zod schema. Providers that support it get the schema enforced by their API (`json_schema`). Others get JSON mode or the schema in the prompt. Every reply is validated, and a model that returns the wrong shape is shown its mistake and asked to correct it (up to twice).
 - **Automatic fallbacks.** If a provider rejects the effort setting or a JSON mode for a particular model, SkillPath retries with a simpler request and remembers what worked for that model.
 - **Reasoning models.** `<think>…</think>` blocks that some open models emit are stripped from what the learner sees.
+- **Clear setup errors.** A URL that returns a web page, a rejected key, an unknown model or a used-up quota each get their own message, with **Change AI or model** to fix it on the spot.
 - **Claude extras.** Adaptive thinking with effort, prompt caching for multi-turn conversations, and clear messages when a request is declined.
 
 ## Customising
 
 - **AI, key, model and effort.** The Settings popup, or `.env.local` for defaults.
 - **Providers, suggested models, free-tier notes.** `PROVIDERS` in `src/lib/ai/providers.ts`. Adding another OpenAI-compatible service is one new entry there.
+- **Course platforms and links.** `PLATFORMS` in `src/lib/resources.ts`.
 - **Teaching style, question count, pass rules.** Edit the prompts in `src/lib/prompts.ts`.
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
@@ -268,15 +269,15 @@ How it stays reliable across very different AIs:
 |---|---|
 | **Start skill check** is greyed out | The chosen AI isn't ready. The line under **Which AI should teach you?** says why: add its key there, or pick another provider |
 | **"… rejected the API key"** | The key is wrong, revoked, or belongs to a different provider. Click **Change AI or model** in the error (or open Settings) and paste the right key |
-| **"… couldn't find the model"** | The model isn't available, e.g. an Ollama model you haven't pulled. The error opens **Change AI or model** and lists the models you actually have. Pick one and click **Try again** |
+| **"… couldn't find the model"** | The model isn't available on that provider. The error opens **Change AI or model**; click **Load models**, pick one and click **Try again** |
+| **"The API URL … returned a web page"** or **"… doesn't point to an AI API"** | A **Custom** provider's URL is wrong. Fix it in the **API URL** field of **Change AI or model**, or switch to a listed provider |
+| **"Couldn't reach …"** | Check your internet connection, proxy or firewall. The service may also be blocking browser requests (CORS) |
 | **"… rate limit or free quota was reached"** | Free tiers have per-minute and per-day limits. Wait, or switch to another free provider in Settings |
 | **"… is out of credit"** | Add credit on the provider's site, or switch to a free option |
-| **"The API URL … returned a web page"** or **"… doesn't point to an AI API"** | The API URL is wrong, often pointing at this app instead of the AI. Fix it in the **API URL** field of **Change AI or model** (Ollama: `http://localhost:11434/v1`, LM Studio: `http://localhost:1234/v1`), or clear the field to use the default |
-| **"Couldn't reach …"** | Check your internet. For Ollama / LM Studio, make sure the app is running and CORS is allowed (see [Local](#local-free-runs-on-your-computer)). For Custom, the service must allow browser requests |
 | **"… kept replying in an unexpected format"** | That model struggles with structured replies. Pick a larger model, or a provider with JSON schema support (Claude, OpenAI, Gemini, Groq, Mistral) |
 | A reply stopped halfway | Click **Get reply** or **Try again**. Nothing you've done is lost |
 | Settings seem ignored | Saved Settings override `.env.local`. Click **Reset to defaults** in Settings to use `.env.local` again |
-| `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints (and update `OLLAMA_ORIGINS` if you use Ollama) |
+| `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
 
 ## Next steps
 

@@ -167,9 +167,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </select>
           <div className="space-y-1.5 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
             <p>
-              <span className="font-medium text-slate-800">
-                {provider.group === "free" ? "Free option: " : provider.group === "local" ? "Local: " : "Pricing: "}
-              </span>
+              <span className="font-medium text-slate-800">{provider.group === "free" ? "Free option: " : "Pricing: "}</span>
               {provider.pricing}
             </p>
             {provider.notes && <p>{provider.notes}</p>}
@@ -218,7 +216,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Base URL (local servers and custom endpoints) */}
+        {/* Base URL (custom endpoints) */}
         {provider.editableBaseUrl && (
           <div className="space-y-2">
             <label htmlFor="settings-url" className={label}>
@@ -251,7 +249,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               placeholder={
                 defaults.apiKey
                   ? `Default: key from .env.local (…${defaults.apiKey.slice(-4)})`
-                  : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Not needed for most local servers"))
+                  : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
               }
               className={`${field} min-w-0 font-mono`}
             />
@@ -260,7 +258,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             </Button>
           </div>
           <p className="text-xs text-slate-500">
-            Saved only in this browser and sent only to {provider.group === "local" ? "your local server" : provider.name}.
+            Saved only in this browser and sent only to {provider.name}.
           </p>
         </div>
 
