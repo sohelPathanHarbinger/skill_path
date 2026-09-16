@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+/* Rendered Markdown from Claude (lessons, questions, feedback). */
+.md {
+  @apply text-[15px] leading-relaxed text-slate-800;
+}
+.md > * + * {
+  margin-top: 0.75em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  @apply font-semibold text-slate-900;
+}
+.md h1 {
+  @apply text-xl;
+}
+.md h2 {
+  @apply text-lg;
+}
+.md h3,
+.md h4 {
+  @apply text-base;
+}
+.md ul {
+  @apply list-disc pl-6;
+}
+.md ol {
+  @apply list-decimal pl-6;
+}
+.md li + li {
+  margin-top: 0.25em;
+}
+.md a {
+  @apply text-indigo-600 underline;
+}
+.md code {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.9em] text-slate-800;
+}
+.md pre {
+  @apply overflow-x-auto rounded-xl bg-slate-900 p-4 text-sm leading-normal text-slate-100;
+}
+.md pre code {
+  @apply bg-transparent p-0 text-slate-100;
+}
+.md blockquote {
+  @apply border-l-4 border-indigo-200 pl-4 text-slate-600;
+}
+.md table {
+  @apply block w-full overflow-x-auto border-collapse text-sm;
+}
+.md th,
+.md td {
+  @apply border border-slate-200 px-3 py-1.5 text-left;
+}
+.md th {
+  @apply bg-slate-50;
+}
+
+/* Tight variant for one-line content such as answer options. */
+.md-compact > * + * {
+  margin-top: 0.25em;
+}
+.md-compact pre {
+  @apply p-2;
+}
