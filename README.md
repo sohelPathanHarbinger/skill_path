@@ -43,13 +43,13 @@ Open the URL it prints, usually **http://localhost:5173**. Press `Ctrl + C` in t
 
 ### 2. Choose your AI in the Settings popup
 
-When the app opens, the **AI settings** popup appears with **Google Gemini** preselected. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), paste it, click **Test key**, then **Save**.
+When the app opens, the **AI settings** popup appears with **Google Gemini** preselected. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), paste it and click **Save**. Every learner uses their own key: the app never ships with one.
 
 | Setting | What it does |
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
 | **API URL** | Only for **Custom**: where the service lives |
-| **API key** | Your key for that provider (**Show** reveals it, **Test key** sends one tiny request to check it). Each provider remembers its own key, encrypted on this device |
+| **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key, encrypted on this device |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
 
@@ -317,7 +317,7 @@ How it stays reliable across very different AIs:
 - **Default AI.** `VITE_AI_PROVIDER` in `.env.local`, or the fallbacks in `src/config.ts` and `defaultProviderId()` in `src/lib/settings.ts`.
 - **Logo and app icons.** `public/favicon.svg` plus the PNG/ICO icons; the icon list and app colours are in `vite.config.ts`.
 - **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
-- **Version, credit and copyright.** `version` in `package.json`; `DEVELOPER` and `COPYRIGHT` in `src/lib/appInfo.ts`; `LICENSE`.
+- **Version, credit and copyright.** `version` in `package.json`; `DEVELOPER` and `COPYRIGHT_HOLDER` in `src/lib/appInfo.ts`; `LICENSE`.
 
 ## Troubleshooting
 
@@ -334,7 +334,6 @@ How it stays reliable across very different AIs:
 | A reply stopped halfway | Click **Get reply** or **Try again**. Nothing you've done is lost |
 | Settings seem ignored | Saved Settings override `.env.local`. Click **Reset to defaults** in Settings to use `.env.local` again |
 | `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
-| **Test key** shows ✗ | Read the message: usually a wrong key, or a key for another provider. Copy it again from the provider's site |
 | The default AI is still Claude on your machine | Your `.env.local` overrides the default. Set `VITE_AI_PROVIDER=gemini` and leave `VITE_AI_MODEL` empty |
 | No **Install app** in the menu | Installing needs a production build (`npm run build` + `npm run preview`, or the deployed site), HTTPS or `localhost`, and Chrome or Edge. On iPhone use Safari → **Add to Home Screen** |
 | A deployed change doesn't show | The service worker serves the cached version until the new one takes over. Click **Reload** on the new-version notice, or close every SkillPath tab |
@@ -361,4 +360,4 @@ How it stays reliable across very different AIs:
 
 Designed and developed by **Sohel Pathan**.
 
-© 2026 Sohel Pathan. All rights reserved. See [LICENSE](LICENSE).
+© 2026 Harbinger. All rights reserved. See [LICENSE](LICENSE).

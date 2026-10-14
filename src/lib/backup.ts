@@ -59,17 +59,23 @@ export interface RestoreResult {
   skipped: number;
 }
 
-/** Downloads every track as one JSON file. Returns how many tracks it holds. */
-export async function downloadBackup(): Promise<number> {
+/** The name a backup made on this date is saved under, e.g. skillpath-backup-2026-10-14.json. */
+export function backupFileName(date = new Date()): string {
+  return `skillpath-backup-${date.toISOString().slice(0, 10)}.json`;
+}
+
+/** Downloads every track as one JSON file. Returns the file name and how many tracks it holds. */
+export async function downloadBackup(): Promise<{ fileName: string; count: number }> {
   const tracks = await listTracks();
   const backup = { format: FORMAT, version: VERSION, exportedAt: new Date().toISOString(), tracks };
   const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
+  const fileName = backupFileName();
   const link = document.createElement("a");
   link.href = url;
-  link.download = `skillpath-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = fileName;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return tracks.length;
+  return { fileName, count: tracks.length };
 }
 
 /**
@@ -81,10 +87,10 @@ export async function restoreBackup(file: File): Promise<RestoreResult> {
   try {
     parsed = JSON.parse(await file.text());
   } catch {
-    throw new Error("That file isn't a SkillPath backup: it isn't readable JSON.");
+    throw new Error("That file isn't a SkillPath backup. Pick the .json file made by Download backup.");
   }
   const backup = BackupSchema.safeParse(parsed);
-  if (!backup.success) throw new Error("That file isn't a SkillPath backup, or it has been changed or damaged.");
+  if (!backup.success) throw new Error("That file isn't a SkillPath backup, or it has been changed or damaged. Pick the .json file made by Download backup.");
   if (backup.data.version > VERSION) {
     throw new Error("This backup was made by a newer version of SkillPath. Update the app, then try again.");
   }

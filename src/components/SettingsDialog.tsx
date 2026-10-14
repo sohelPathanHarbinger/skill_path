@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSettings } from "../hooks/useSettings";
-import { listModels, testConnection } from "../lib/ai";
+import { listModels } from "../lib/ai";
 import { CUSTOM_ID, getProvider, GROUP_LABEL, GROUP_ORDER, PROVIDERS } from "../lib/ai/providers";
 import type { JsonMode } from "../lib/ai/types";
 import { describeError } from "../lib/learning";
@@ -10,7 +10,6 @@ import {
   providerDefaults,
   resolveConfig,
   saveSettings,
-  setupProblem,
   type ProviderOverrides,
 } from "../lib/settings";
 import { Button } from "./ui";
@@ -41,8 +40,6 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [loadedModels, setLoadedModels] = useState<Record<string, string[]>>({});
   const [loadStatus, setLoadStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,37 +62,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   function update(patch: Partial<ProviderOverrides>) {
     setDrafts((prev) => ({ ...prev, [providerId]: { ...prev[providerId], ...patch } }));
-    setTestResult(null);
   }
 
   function chooseProvider(id: string) {
     setProviderId(id);
     setShowKey(false);
     setLoadStatus(null);
-    setTestResult(null);
-  }
-
-  /** One tiny request with the settings as currently typed, saved or not. */
-  async function testKey() {
-    const problem = setupProblem(preview);
-    if (problem) {
-      setTestResult({ ok: false, text: problem });
-      return;
-    }
-    setTesting(true);
-    setTestResult(null);
-    try {
-      await testConnection(preview);
-      setTestResult({ ok: true, text: `It works: ${preview.providerName} replied using ${preview.model}.` });
-    } catch (err) {
-      const timedOut = err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
-      setTestResult({
-        ok: false,
-        text: timedOut ? `${preview.providerName} didn't reply within 30 seconds. Check your connection and try again.` : describeError(err),
-      });
-    } finally {
-      setTesting(false);
-    }
   }
 
   async function loadModels() {
@@ -285,22 +257,11 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               {showKey ? "Hide" : "Show"}
             </Button>
           </div>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs text-slate-500">
-              {keysSaved
-                ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
-                : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
-            </p>
-            <Button variant="secondary" onClick={testKey} disabled={testing} className="shrink-0 px-3 py-1.5 text-xs">
-              {testing ? "Testing…" : "Test key"}
-            </Button>
-          </div>
-          {testResult && (
-            <p role="status" className={`text-xs ${testResult.ok ? "text-emerald-700" : "text-rose-700"}`}>
-              {testResult.ok ? "✓ " : "✗ "}
-              {testResult.text}
-            </p>
-          )}
+          <p className="text-xs text-slate-500">
+            {keysSaved
+              ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
+              : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
+          </p>
         </div>
 
         {/* Model */}

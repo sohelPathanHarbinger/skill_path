@@ -76,8 +76,9 @@ export function HowToUsePage() {
           card needed.
         </Step>
         <Step n={2} title="Add the key to SkillPath">
-          Open <b>AI settings</b> (top right), keep <b>Google Gemini</b> selected, paste the key and click <b>Test key</b>,
-          then <b>Save</b>. The key is encrypted and stays on this device.
+          Open <b>AI settings</b> (top right), keep <b>Google Gemini</b> selected, paste the key and click <b>Save</b>. The
+          key is encrypted and stays on this device. If the key is wrong, SkillPath tells you as soon as you start a
+          track, with a button to fix it.
         </Step>
         <Step n={3} title="Start a track">
           On the home page, type the skill (for example Python), your goal and what you've done with it so far, then click{" "}

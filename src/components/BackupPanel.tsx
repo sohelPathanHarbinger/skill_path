@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
-import { downloadBackup, restoreBackup, type RestoreResult } from "../lib/backup";
+import { backupFileName, downloadBackup, restoreBackup, type RestoreResult } from "../lib/backup";
 import { describeError } from "../lib/learning";
 import { Button } from "./ui";
 
@@ -26,8 +26,8 @@ export function BackupPanel() {
     setBusy(true);
     setStatus(null);
     try {
-      const count = await downloadBackup();
-      setStatus({ ok: true, text: `Downloaded a backup of ${plural(count, "track")}. Keep the file somewhere safe.` });
+      const { fileName, count } = await downloadBackup();
+      setStatus({ ok: true, text: `Downloaded ${fileName} with ${plural(count, "track")}. Keep the file somewhere safe.` });
     } catch (err) {
       setStatus({ ok: false, text: describeError(err) });
     } finally {
@@ -60,6 +60,10 @@ export function BackupPanel() {
 
       <section className="space-y-2">
         <h3 className="font-semibold text-slate-900">Back up</h3>
+        <p>
+          Saves all your tracks as one <b>.json</b> file, named like <code className="text-xs">{backupFileName()}</code>,
+          to your downloads.
+        </p>
         <Button onClick={download} disabled={busy}>
           Download backup
         </Button>
@@ -68,8 +72,9 @@ export function BackupPanel() {
       <section className="space-y-2">
         <h3 className="font-semibold text-slate-900">Restore</h3>
         <p>
-          Pick a SkillPath backup file. Tracks in it are added. A track you already have is replaced only when the
-          backup's copy is newer.
+          Pick a SkillPath backup: the <b>.json</b> file made by <b>Download backup</b>. Other files, such as .txt, can't
+          be restored. Tracks in it are added. A track you already have is replaced only when the backup's copy is
+          newer.
         </p>
         <input ref={fileInput} type="file" accept=".json,application/json" onChange={restore} className="hidden" />
         <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={busy}>

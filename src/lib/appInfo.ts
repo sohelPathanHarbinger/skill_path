@@ -1,8 +1,8 @@
-// Who made the app and which version is running: shown in the menu, the About page
-// and the footer. The copyright notice is a placeholder until the terms are final
-// (see LICENSE).
+// Who made the app, who owns it and which version is running: shown in the menu, the
+// About page and the footer. Keep the copyright in step with LICENSE.
 import { version } from "../../package.json";
 
 export const APP_VERSION = version;
 export const DEVELOPER = "Sohel Pathan";
-export const COPYRIGHT = `© 2026 ${DEVELOPER}. All rights reserved.`;
+export const COPYRIGHT_HOLDER = "Harbinger";
+export const COPYRIGHT = `© 2026 ${COPYRIGHT_HOLDER}. All rights reserved.`;
