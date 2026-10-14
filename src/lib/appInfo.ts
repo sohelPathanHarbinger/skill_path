@@ -3,6 +3,6 @@
 import { version } from "../../package.json";
 
 export const APP_VERSION = version;
-export const DEVELOPER = "Sohel Pathan";
+export const DEVELOPER = "Harbinger";
 export const COPYRIGHT_HOLDER = "Harbinger";
 export const COPYRIGHT = `© 2026 ${COPYRIGHT_HOLDER}. All rights reserved.`;
