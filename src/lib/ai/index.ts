@@ -26,6 +26,18 @@ export function aiStream(req: StreamRequest): Promise<string> {
   return config.provider.kind === "anthropic" ? anthropicStream(config, req) : compatStream(config, req);
 }
 
+/** Sends one tiny request with these settings, to check that the key, model and URL work. */
+export async function testConnection(config: AIConfig): Promise<void> {
+  const req: StreamRequest = {
+    system: "You are checking that an API connection works.",
+    context: "",
+    messages: [{ role: "user", content: "Reply with just the word OK." }],
+    onText: () => {},
+    signal: AbortSignal.timeout(30_000),
+  };
+  await (config.provider.kind === "anthropic" ? anthropicStream(config, req) : compatStream(config, req));
+}
+
 /** Model ids the provider currently offers (used by "Load models" in Settings). */
 export function listModels(config: AIConfig): Promise<string[]> {
   return config.provider.kind === "anthropic" ? anthropicListModels(config) : compatListModels(config);

@@ -1,8 +1,8 @@
 # SkillPath — adaptive learning coach
 
-A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation.
+A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation. It is a **Progressive Web App (PWA)**: learners can install it on a phone or computer and open saved tracks offline.
 
-It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effort) is the default. Learners can switch in the app's **Settings** popup to Google Gemini, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
+It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free tier, low effort) is the default. Learners can switch in the app's **Settings** popup to Anthropic Claude, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
 
 1. **Skill check.** An adaptive conversation of about 6–10 questions (multiple choice, short answer, code, experience). Each question depends on the previous answers: it gets harder after correct ones and easier after wrong ones.
 2. **Skill profile.** Overall level, mastery per sub-topic (0–100), strengths, gaps and misconceptions.
@@ -10,6 +10,11 @@ It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effo
 4. **Courses & materials.** Video courses, websites, books, docs and practice on different platforms, picked for the learner's goal and gaps.
 5. **Lessons.** A streamed tutor chat per module that explains, gives examples, asks questions and adapts ("explain another way", "go faster", …).
 6. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
+7. **Installable app.** Install it from the browser on Android, iPhone or desktop. Saved tracks open offline, and a new version announces itself with a **Reload** button.
+8. **Private by design.** No account and no server. Tracks stay on the device, the API key is encrypted on the device, and **Back up & restore** moves tracks between devices.
+9. **Help built in.** A ☰ menu with **How to use**, **About**, **Disclaimer & privacy**, **AI settings**, **Back up & restore** and **Install app**.
+
+Designed and developed by **Sohel Pathan**.
 
 ---
 
@@ -23,25 +28,32 @@ It works with **many AI providers**, not only Claude. Claude (Sonnet 5, low effo
 ### 1. Install and start
 
 ```bash
-npm install
-npm run dev
+npm install      # once, and again after pulling changes (this version added vite-plugin-pwa)
+npm run dev      # starts the app with hot reload
 ```
 
 Open the URL it prints, usually **http://localhost:5173**. Press `Ctrl + C` in the terminal to stop the app.
 
+| Command | Use it for |
+|---|---|
+| `npm run dev` | Everyday development, with hot reload. Install and offline mode are off here |
+| `npm run build` | Type-check, then build the production app (with the PWA files) into `dist/` |
+| `npm run preview` | Serve `dist/` at **http://localhost:4173** to try installing, offline mode and updates |
+| `npm run typecheck` | Type-check only |
+
 ### 2. Choose your AI in the Settings popup
 
-When the app opens, the **AI settings** popup appears:
+When the app opens, the **AI settings** popup appears with **Google Gemini** preselected. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), paste it, click **Test key**, then **Save**.
 
 | Setting | What it does |
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
 | **API URL** | Only for **Custom**: where the service lives |
-| **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key |
+| **API key** | Your key for that provider (**Show** reveals it, **Test key** sends one tiny request to check it). Each provider remembers its own key, encrypted on this device |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
 
-Click **Save** to use your choices, or **Use defaults** (or ✕ / `Esc`) to close without changes. Saved settings take effect immediately and are remembered in this browser. The provider's name in the top-right corner reopens Settings any time, and **Reset to defaults** clears everything you saved. The footer shows the AI, model and effort in use.
+Click **Save** to use your choices, or **Use defaults** (or ✕ / `Esc`) to close without changes. Saved settings take effect immediately and are remembered on this device (the key encrypted). The provider's name in the top-right corner reopens Settings any time, and **Reset to defaults** clears everything you saved. The footer shows the AI, model and effort in use.
 
 ### Optional: set defaults in `.env.local`
 
@@ -58,25 +70,46 @@ Copy-Item .env.example .env.local
 ```
 
 ```
-VITE_AI_PROVIDER=anthropic        # the default AI (see the tables below for ids)
+VITE_AI_PROVIDER=gemini           # the default AI (see the tables below for ids)
 VITE_AI_MODEL=                    # empty = that AI's recommended model
 VITE_AI_EFFORT=low
-VITE_ANTHROPIC_API_KEY=sk-ant-...
-VITE_GEMINI_API_KEY=...           # one variable per provider; fill in only what you use
+VITE_GEMINI_API_KEY=AIza...       # one variable per provider; fill in only what you use
 ```
 
-Restart `npm run dev` after changing it, because this file is read only at startup.
+Restart `npm run dev` after changing it, because this file is read only at startup. API keys here are used by `npm run dev` only; they are never built into the app.
 
 **Which setting wins:** a value saved in the Settings popup → otherwise `.env.local` → otherwise the built-in default.
 
-### Optional: production build
+### 3. Production build
 
 ```bash
 npm run build     # type-checks, then builds into dist/
-npm run preview   # serves the built app locally
+npm run preview   # serves the built app at http://localhost:4173
 ```
 
-> **About API keys.** Keys in `.env.local` are baked into the JavaScript bundle at build time, and keys entered in Settings are stored in this browser's localStorage. `.env.local` is git-ignored, but anyone who can open the running app could read the keys. **Use this only on your own machine** and don't deploy `dist/` publicly with keys in it. Before sharing the app, move the AI calls behind a small server function (see "Next steps").
+> **About API keys.** Keys in `.env.local` are used by `npm run dev` only; `npm run build` leaves them out, so a deployed `dist/` never contains your keys. In the built app each learner pastes their **own** key in Settings. It is encrypted with AES-GCM (Web Crypto) using a non-extractable device key kept in IndexedDB, decrypted only in memory, and sent only to the chosen provider. Keys saved in plain text by older versions are encrypted automatically on first start.
+
+### 4. Install as an app (PWA)
+
+The production build includes a web app manifest, icons and a service worker that caches the app's own files (AI requests are never cached). To try it locally, run `npm run build` then `npm run preview` and open the printed URL in Chrome or Edge.
+
+- **Android, Chrome, Edge:** menu (☰) → **Install app**, or the install icon in the address bar.
+- **iPhone, iPad:** open the site in Safari → **Share** → **Add to Home Screen**.
+- **Updates:** when a new version is deployed, the app shows **A new version of SkillPath is ready** with a **Reload** button.
+- **Offline:** saved tracks open without a connection; lessons, quizzes and new tracks need the internet.
+
+Hosting must be **HTTPS** (Vercel, Netlify and Cloudflare Pages all are). Icons live in `public/`; the logo source is `public/favicon.svg`.
+
+### 5. Deploy (Vercel) and get an Android app
+
+1. Push the repository to GitHub.
+2. On [vercel.com](https://vercel.com): **Add New → Project**, import the repository. Vercel detects Vite (build `npm run build`, output `dist`).
+3. Don't add any `VITE_*_API_KEY` variables: learners enter their own key.
+4. Deploy. Every push to `main` redeploys, and other branches get their own preview URL.
+
+**Android APK:** enter the deployed URL at [pwabuilder.com](https://www.pwabuilder.com) and download the Android package: an **APK** to install directly on phones, or an **AAB** for Google Play. Play also needs the `assetlinks.json` file PWABuilder gives you, placed at `public/.well-known/assetlinks.json`.
+
+**iPhone:** people install from Safari (**Share → Add to Home Screen**). The App Store needs a native wrapper such as Capacitor.
 
 ---
 
@@ -88,7 +121,7 @@ Free tiers, credits and model names change often. The details below were checked
 
 | Provider (`id`) | What's free | Default model | Get a key |
 |---|---|---|---|
-| **Google Gemini** (`gemini`) | Free tier, no credit card, rate-limited. Google may use free-tier prompts to improve its products | `gemini-3.8-flash` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **Google Gemini** (`gemini`, default) | Free tier, no credit card, rate-limited. Google may use free-tier prompts to improve its products | `gemini-3.8-flash` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 | **Groq** (`groq`) | Free tier, no credit card, about 30 requests/minute. Very fast | `openai/gpt-oss-120b` | [console.groq.com/keys](https://console.groq.com/keys) |
 | **OpenRouter** (`openrouter`) | Free models (ids ending in `:free`), no credit card, about 50 requests/day. `openrouter/free` picks one automatically | `openrouter/free` | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
 | **Mistral AI** (`mistral`) | Free Experiment plan (phone verification). You must let Mistral train on your data | `mistral-small-latest` | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys) |
@@ -100,7 +133,7 @@ Free tiers, credits and model names change often. The details below were checked
 
 | Provider (`id`) | Notes | Default model |
 |---|---|---|
-| **Anthropic Claude** (`anthropic`, default) | Haiku 4.5 $1/$5, Sonnet 5 $2/$10, Opus 5 $5/$25 per million input/output tokens | `claude-sonnet-5` |
+| **Anthropic Claude** (`anthropic`) | Haiku 4.5 $1/$5, Sonnet 5 $2/$10, Opus 5 $5/$25 per million input/output tokens | `claude-sonnet-5` |
 | **OpenAI** (`openai`) | GPT-5.4 mini is the lower-cost option; GPT-5.5 is the flagship | `gpt-5.4-mini` |
 | **DeepSeek** (`deepseek`) | Among the lowest prices; top up a small balance | `deepseek-v4-flash` |
 | **xAI Grok** (`xai`) | Check the xAI console for any promotional credits | `grok-4.3` |
@@ -201,6 +234,17 @@ Click **Start quiz** to get 4 questions written for your level and this module, 
 
 Work through the modules in order. The dashboard shows your progress, best quiz score per module, and how your mastery is growing.
 
+### The ☰ menu
+
+| Item | What it does |
+|---|---|
+| **How to use** | Step-by-step help, including how to get a free Gemini key |
+| **About SkillPath** | What the app does, its version and credits |
+| **Disclaimer & privacy** | How AI-generated content, learner data and API keys are handled |
+| **AI settings** | The same popup as the provider name in the header |
+| **Back up & restore** | Download every track as one JSON file, or restore tracks from one |
+| **Install app** | Shown when the browser can install SkillPath (on iPhone: Safari → **Add to Home Screen**) |
+
 ### Coming back later
 
 - Everything saves automatically. Close the tab and come back any time: your tracks are listed under **Your learning tracks** on the home page, and a half-finished skill check or lesson picks up where you left off.
@@ -208,7 +252,7 @@ Work through the modules in order. The dashboard shows your progress, best quiz 
 - **Delete track** removes a track entirely.
 - You can switch AI, model or effort in **Settings** at any point, even mid-course. The next request uses the new choice.
 
-> Progress is stored in *this browser* (IndexedDB). A different browser or computer won't see it, and clearing this site's data in your browser deletes it.
+> Progress is stored in *this browser* (IndexedDB). A different browser or computer won't see it, and clearing this site's data in your browser deletes it. Use menu (☰) → **Back up & restore** to download all tracks as a JSON file and restore them on any device. API keys and settings are never included in a backup.
 
 ### Tips for learning well
 
@@ -221,7 +265,7 @@ Work through the modules in order. The dashboard shows your progress, best quiz 
 
 ## How it works
 
-There is no backend and no database. The browser talks to the chosen AI provider directly, and all learner data is saved in the browser's IndexedDB.
+There is no backend and no database. The browser talks to the chosen AI provider directly, and all learner data is saved in the browser's IndexedDB. API keys are stored encrypted in the same database.
 
 ```
 src/
@@ -235,6 +279,9 @@ src/
       json.ts              reads JSON out of model replies and validates it
       errors.ts            one error type with learner-friendly messages for every provider
     settings.ts            settings in use: Settings-popup choices on top of the defaults
+    secrets.ts             API keys encrypted with AES-GCM and a non-extractable device key
+    backup.ts              download all tracks as JSON, and restore them with validation
+    appInfo.ts             version, developer credit and copyright notice
     learning.ts            the AI tasks: skill check, profile, plan, resources, tutor, quizzes
     prompts.ts             system prompts + learner-context builders (the "teaching brain")
     schemas.ts             Zod schemas for the structured (JSON) replies
@@ -242,8 +289,13 @@ src/
     types.ts, storage.ts, trackStore.ts, trackDraft.ts, progress.ts   data model and persistence
   components/              React screens: SettingsDialog, AIQuickSwitch, AIErrorPanel, Home,
                            AssessmentView, BuildingView, Dashboard, ResourcesPanel, ModuleView,
-                           TutorChat, QuizPanel
-  hooks/                   hash router, useTrack, useSettings, useSettingsDialog
+                           TutorChat, QuizPanel, AppMenu (☰ menu), InfoPages (About, How to use,
+                           Disclaimer), BackupPanel, AppStatus (offline banner, update notice)
+  hooks/                   hash router, useTrack, useSettings, useSettingsDialog, useInstallPrompt,
+                           useOnline
+public/                    logo (favicon.svg) and the PWA icons
+vite.config.ts             Vite, Tailwind, and the PWA manifest + service worker settings
+docs/                      User Guide, Developer Guide, presentation and talking notes
 ```
 
 How it stays reliable across very different AIs:
@@ -262,6 +314,10 @@ How it stays reliable across very different AIs:
 - **Teaching style, question count, pass rules.** Edit the prompts in `src/lib/prompts.ts`.
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
+- **Default AI.** `VITE_AI_PROVIDER` in `.env.local`, or the fallbacks in `src/config.ts` and `defaultProviderId()` in `src/lib/settings.ts`.
+- **Logo and app icons.** `public/favicon.svg` plus the PNG/ICO icons; the icon list and app colours are in `vite.config.ts`.
+- **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
+- **Version, credit and copyright.** `version` in `package.json`; `DEVELOPER` and `COPYRIGHT` in `src/lib/appInfo.ts`; `LICENSE`.
 
 ## Troubleshooting
 
@@ -278,10 +334,31 @@ How it stays reliable across very different AIs:
 | A reply stopped halfway | Click **Get reply** or **Try again**. Nothing you've done is lost |
 | Settings seem ignored | Saved Settings override `.env.local`. Click **Reset to defaults** in Settings to use `.env.local` again |
 | `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
+| **Test key** shows ✗ | Read the message: usually a wrong key, or a key for another provider. Copy it again from the provider's site |
+| The default AI is still Claude on your machine | Your `.env.local` overrides the default. Set `VITE_AI_PROVIDER=gemini` and leave `VITE_AI_MODEL` empty |
+| No **Install app** in the menu | Installing needs a production build (`npm run build` + `npm run preview`, or the deployed site), HTTPS or `localhost`, and Chrome or Edge. On iPhone use Safari → **Add to Home Screen** |
+| A deployed change doesn't show | The service worker serves the cached version until the new one takes over. Click **Reload** on the new-version notice, or close every SkillPath tab |
+| The key is forgotten after every reload | Private window, or an `http://` network address where Web Crypto isn't available. Use a normal window, `localhost` or HTTPS |
+| **"That file isn't a SkillPath backup"** | Pick the `.json` file made by **Download backup** |
 
 ## Next steps
 
 | When you need… | Add |
 |---|---|
-| To share the app without exposing keys | One serverless function (Vercel/Netlify/Cloudflare) that holds the keys and forwards requests; point `src/lib/ai/` at it |
+| To let learners use the app without their own key | One serverless function (Vercel/Netlify/Cloudflare) that holds your key, limits usage per learner and forwards requests; point `src/lib/ai/` at it |
 | Accounts, progress across devices, a teacher view | A database; replace `src/lib/storage.ts` with API calls |
+
+## Documentation
+
+| File | For |
+|---|---|
+| [docs/USER_GUIDE.docx](docs/USER_GUIDE.docx) | Learners: getting a key, installing the app, taking a course, backups, privacy, FAQ |
+| [docs/DEVELOPER_GUIDE.docx](docs/DEVELOPER_GUIDE.docx) | Developers: running, architecture, prompts, encrypted keys, PWA, deploying, security |
+| [docs/SkillPath-Presentation.pptx](docs/SkillPath-Presentation.pptx) | A 17-slide presentation of the project |
+| [docs/Presentation-Talking-Notes.docx](docs/Presentation-Talking-Notes.docx) | Speaker notes and likely questions for that presentation |
+
+## Credits and copyright
+
+Designed and developed by **Sohel Pathan**.
+
+© 2026 Sohel Pathan. All rights reserved. See [LICENSE](LICENSE).

@@ -64,7 +64,10 @@ async function errorFromResponse(config: AIConfig, response: Response): Promise<
   let detail = "";
   let jsonBody = false;
   try {
-    const body = (await response.clone().json()) as { error?: { message?: string } | string; message?: string; detail?: string } | null;
+    type ErrorBody = { error?: { message?: string } | string; message?: string; detail?: string } | null;
+    const raw = (await response.clone().json()) as ErrorBody | ErrorBody[];
+    // Gemini wraps its error in a one-item array.
+    const body = Array.isArray(raw) ? (raw[0] ?? null) : raw;
     jsonBody = body !== null && typeof body === "object";
     detail = (typeof body?.error === "string" ? body.error : body?.error?.message) ?? body?.message ?? body?.detail ?? "";
   } catch {

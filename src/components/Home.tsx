@@ -3,7 +3,7 @@ import { navigate } from "../hooks/useHashRoute";
 import { useSettings } from "../hooks/useSettings";
 import { LEVEL_LABEL, planProgress } from "../lib/progress";
 import { loadTrackDraft, saveTrackDraft, type TrackDraft } from "../lib/trackDraft";
-import { createTrack, listTracks, loadTrack, updateTrack } from "../lib/trackStore";
+import { createTrack, listTracks, loadTrack, subscribeTrackList, updateTrack } from "../lib/trackStore";
 import type { Track } from "../lib/types";
 import { AIQuickSwitch } from "./AIQuickSwitch";
 import { Badge, Bar, Button, Card } from "./ui";
@@ -13,8 +13,11 @@ const SUGGESTIONS = ["Python", "TypeScript", "React", "Node.js", "SQL", "Docker"
 export function Home() {
   const [tracks, setTracks] = useState<Track[] | null>(null);
 
+  // Refresh when tracks are restored from a backup.
   useEffect(() => {
-    listTracks().then(setTracks);
+    const refresh = () => void listTracks().then(setTracks);
+    refresh();
+    return subscribeTrackList(refresh);
   }, []);
 
   return (
