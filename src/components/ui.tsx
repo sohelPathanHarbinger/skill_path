@@ -74,6 +74,34 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
   );
 }
 
+/** The "← back" button at the top of a page. */
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-base font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 hover:text-slate-900 hover:ring-slate-300"
+    >
+      <span aria-hidden="true" className="text-lg leading-none">
+        ←
+      </span>
+      {children}
+    </a>
+  );
+}
+
+/** A compact card for the side column of wide layouts. */
+export function SidePanel({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="space-y-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+        {aside && <span className="text-xs text-slate-500">{aside}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex items-center gap-3 text-sm text-slate-500" role="status">
