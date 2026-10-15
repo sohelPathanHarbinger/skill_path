@@ -3,7 +3,7 @@ import { navigate } from "../hooks/useHashRoute";
 import { useSettings } from "../hooks/useSettings";
 import { LEVEL_LABEL, planProgress } from "../lib/progress";
 import { loadTrackDraft, saveTrackDraft, type TrackDraft } from "../lib/trackDraft";
-import { createTrack, listTracks, loadTrack, updateTrack } from "../lib/trackStore";
+import { createTrack, listTracks, loadTrack, subscribeTrackList, updateTrack } from "../lib/trackStore";
 import type { Track } from "../lib/types";
 import { AIQuickSwitch } from "./AIQuickSwitch";
 import { Badge, Bar, Button, Card } from "./ui";
@@ -13,40 +13,43 @@ const SUGGESTIONS = ["Python", "TypeScript", "React", "Node.js", "SQL", "Docker"
 export function Home() {
   const [tracks, setTracks] = useState<Track[] | null>(null);
 
+  // Refresh when tracks are restored from a backup.
   useEffect(() => {
-    listTracks().then(setTracks);
+    const refresh = () => void listTracks().then(setTracks);
+    refresh();
+    return subscribeTrackList(refresh);
   }, []);
 
+  // On wide screens the tracks fill the column under the intro, next to the form;
+  // on narrow screens they follow the form.
   return (
-    <div className="space-y-12">
-      <section className="grid gap-8 lg:grid-cols-5">
-        <div className="space-y-3 lg:col-span-2">
-          <h1 className="text-3xl font-semibold tracking-tight">What do you want to learn?</h1>
-          <p className="text-slate-600">
-            Pick a skill and tell me your goal. I'll ask a few questions to find your current level, then build a plan
-            and teach you one module at a time.
-          </p>
-          <ol className="space-y-2 pt-2 text-sm text-slate-600">
-            <li>
-              <span className="font-semibold text-indigo-600">1.</span> Short adaptive skill check
-            </li>
-            <li>
-              <span className="font-semibold text-indigo-600">2.</span> Your skill profile and personal plan
-            </li>
-            <li>
-              <span className="font-semibold text-indigo-600">3.</span> Two-way lessons and quizzes that adapt as you go
-            </li>
-          </ol>
-        </div>
-        <Card className="lg:col-span-3">
-          <NewTrackForm />
-        </Card>
-      </section>
+    <div className="grid items-start gap-8 lg:grid-cols-5 lg:grid-rows-[auto_1fr] xl:gap-12">
+      <div className="space-y-3 lg:col-span-2">
+        <h1 className="text-3xl font-semibold tracking-tight">What do you want to learn?</h1>
+        <p className="text-slate-600">
+          Pick a skill and tell me your goal. I'll ask a few questions to find your current level, then build a plan
+          and teach you one module at a time.
+        </p>
+        <ol className="space-y-2 pt-2 text-sm text-slate-600">
+          <li>
+            <span className="font-semibold text-indigo-600">1.</span> Short adaptive skill check
+          </li>
+          <li>
+            <span className="font-semibold text-indigo-600">2.</span> Your skill profile and personal plan
+          </li>
+          <li>
+            <span className="font-semibold text-indigo-600">3.</span> Two-way lessons and quizzes that adapt as you go
+          </li>
+        </ol>
+      </div>
+      <Card className="lg:col-span-3 lg:row-span-2">
+        <NewTrackForm />
+      </Card>
 
       {tracks && tracks.length > 0 && (
-        <section className="space-y-4">
+        <section className="space-y-4 lg:col-span-2">
           <h2 className="text-lg font-semibold">Your learning tracks</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
             {tracks.map((track) => (
               <TrackCard key={track.id} track={track} />
             ))}

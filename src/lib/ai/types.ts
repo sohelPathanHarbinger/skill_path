@@ -24,9 +24,9 @@ export interface ProviderDef {
   name: string;
   /** "anthropic" uses the Anthropic SDK; every other provider speaks the OpenAI-compatible Chat Completions API. */
   kind: "anthropic" | "openai-compatible";
-  group: "default" | "free" | "paid" | "local" | "custom";
+  group: "default" | "free" | "paid" | "custom";
   baseUrl: string;
-  /** Local servers and custom endpoints let the learner change the URL. */
+  /** Custom endpoints let the learner change the URL. */
   editableBaseUrl: boolean;
   keyRequired: boolean;
   keyUrl?: string;

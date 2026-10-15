@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "description": "Adaptive learning coach: assesses a learner's current level on a technical skill, then teaches it at the right level.",
+  "author": "Sohel Pathan",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -26,6 +28,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vite-plugin-pwa": "^2.0.0"
   }
 }

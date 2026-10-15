@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useEffect, useId, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { masteryColor } from "../lib/progress";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -27,6 +28,78 @@ export function Button({
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 ${className}`}>{children}</div>;
+}
+
+/**
+ * A popup over the page. Closes with ✕, Escape or a click outside it. Rendered into
+ * <body> so it covers the whole window even when opened from the sticky header.
+ */
+export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const titleId = useId();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
+      <div onClick={(e) => e.stopPropagation()} className="mx-auto my-8 w-full max-w-xl space-y-5 rounded-2xl bg-white p-6 shadow-xl">
+        <div className="flex items-start justify-between gap-4">
+          <h2 id={titleId} className="text-lg font-semibold">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** The "← back" button at the top of a page. */
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-base font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 hover:text-slate-900 hover:ring-slate-300"
+    >
+      <span aria-hidden="true" className="text-lg leading-none">
+        ←
+      </span>
+      {children}
+    </a>
+  );
+}
+
+/** A compact card for the side column of wide layouts. */
+export function SidePanel({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="space-y-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+        {aside && <span className="text-xs text-slate-500">{aside}</span>}
+      </div>
+      {children}
+    </section>
+  );
 }
 
 export function Spinner({ label }: { label?: string }) {

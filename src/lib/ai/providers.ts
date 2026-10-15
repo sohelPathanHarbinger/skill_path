@@ -29,13 +29,12 @@ const noEffort = () => null;
 
 export const CUSTOM_ID = "custom";
 
-export const GROUP_ORDER: ProviderDef["group"][] = ["default", "free", "paid", "local", "custom"];
+export const GROUP_ORDER: ProviderDef["group"][] = ["default", "free", "paid", "custom"];
 
 export const GROUP_LABEL: Record<ProviderDef["group"], string> = {
   default: "Default",
   free: "Free tier or free credits",
   paid: "Paid",
-  local: "Local: free, runs on your computer",
   custom: "Custom",
 };
 
@@ -252,42 +251,6 @@ export const PROVIDERS: ProviderDef[] = [
     effortOptions: grokEfforts,
   },
 
-  // --- Local ----------------------------------------------------------------
-  {
-    id: "ollama",
-    name: "Ollama",
-    kind: "openai-compatible",
-    group: "local",
-    baseUrl: "http://localhost:11434/v1",
-    editableBaseUrl: true,
-    keyRequired: false,
-    keyUrl: "https://ollama.com/download",
-    pricing: "Free. Runs open models on your own computer; nothing leaves your machine.",
-    notes:
-      "Install Ollama, run \"ollama pull llama3.2\" (or any model) and keep Ollama running, then click Load models. If requests are blocked, set the environment variable OLLAMA_ORIGINS=http://localhost:5173 and restart Ollama.",
-    models: [{ id: "llama3.2", label: "Llama 3.2 (pull it first)" }],
-    defaultModel: "llama3.2",
-    jsonMode: "json_schema",
-    effortOptions: noEffort,
-  },
-  {
-    id: "lmstudio",
-    name: "LM Studio",
-    kind: "openai-compatible",
-    group: "local",
-    baseUrl: "http://localhost:1234/v1",
-    editableBaseUrl: true,
-    keyRequired: false,
-    keyUrl: "https://lmstudio.ai",
-    pricing: "Free. Runs open models on your own computer; nothing leaves your machine.",
-    notes:
-      "In LM Studio, load a model, start the server from the Developer tab and turn on Enable CORS in Server Settings. Then click Load models.",
-    models: [],
-    defaultModel: "",
-    jsonMode: "json_schema",
-    effortOptions: noEffort,
-  },
-
   // --- Custom ---------------------------------------------------------------
   {
     id: CUSTOM_ID,
@@ -298,7 +261,7 @@ export const PROVIDERS: ProviderDef[] = [
     editableBaseUrl: true,
     keyRequired: false,
     pricing:
-      "Any service with an OpenAI-compatible /chat/completions API: a company AI gateway, LiteLLM, vLLM, or a provider not listed here.",
+      "Any service with an OpenAI-compatible /chat/completions API: a company AI gateway, or a provider not listed here.",
     notes:
       "Enter the base URL (the part before /chat/completions), a model id and a key if the service needs one. The service must allow requests from browsers (CORS).",
     models: [],

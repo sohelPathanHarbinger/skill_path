@@ -104,7 +104,7 @@ export function ResourcesPanel({ track, update }: { track: Track; update: Update
           </div>
 
           {visible.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {visible.map((resource, i) => (
                 <ResourceCard key={`${resource.platform}-${resource.title}-${i}`} resource={resource} />
               ))}
