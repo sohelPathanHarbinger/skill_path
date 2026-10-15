@@ -29,7 +29,7 @@ const label = "block text-sm font-medium text-slate-700";
  * .env.local defaults; empty fields, or closing without saving, keep the defaults.
  */
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const { config: active, stored } = useSettings();
+  const { config: active, stored, keysSaved } = useSettings();
   const [providerId, setProviderId] = useState(active.provider.id);
   const [drafts, setDrafts] = useState<Record<string, ProviderOverrides>>(() => ({ ...stored.providers }));
   const [customName, setCustomName] = useState(stored.customName ?? "");
@@ -258,7 +258,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             </Button>
           </div>
           <p className="text-xs text-slate-500">
-            Saved only in this browser and sent only to {provider.name}.
+            {keysSaved
+              ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
+              : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
           </p>
         </div>
 
