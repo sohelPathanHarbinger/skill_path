@@ -10,6 +10,10 @@ import { useSettings } from "./hooks/useSettings";
 import { closeSettingsDialog, openSettingsDialog, useSettingsDialogOpen } from "./hooks/useSettingsDialog";
 import { COPYRIGHT, DEVELOPER } from "./lib/appInfo";
 
+// One fluid width for header, page and footer: it fills the window up to 1600px,
+// with side padding that grows on larger screens.
+const SHELL = "mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8";
+
 export default function App() {
   const route = useHashRoute();
   const { config, problem } = useSettings();
@@ -22,7 +26,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <div className={`${SHELL} flex items-center justify-between py-3`}>
           <a href="#/" className="flex items-center gap-2 font-semibold text-slate-900">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-8 w-8" />
             SkillPath
@@ -45,7 +49,7 @@ export default function App() {
       </header>
       <OfflineBanner />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main className={`${SHELL} flex-1 py-8`}>
         {route.name === "home" ? (
           <Home />
         ) : route.name === "track" ? (
@@ -55,7 +59,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="space-y-1 px-4 py-6 text-center text-xs text-slate-400">
+      <footer className={`${SHELL} space-y-1 py-6 text-center text-xs text-slate-400`}>
         <p>
           Your learning data stays on this device · AI: {config.providerName} · {config.model || "no model"}
           {config.effort && ` · Effort: ${config.effort}`}
