@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { isAppleMobile, isInstalledApp, promptInstall, useCanInstall } from "../hooks/useInstallPrompt";
 import { openSettingsDialog } from "../hooks/useSettingsDialog";
 import { APP_VERSION, DEVELOPER } from "../lib/appInfo";
 import { BackupPanel } from "./BackupPanel";
@@ -19,8 +18,6 @@ const TITLES: Record<Page, string> = {
 export function AppMenu() {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
-  const canInstall = useCanInstall();
-  const showAppleInstall = !canInstall && isAppleMobile() && !isInstalledApp();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,8 +67,6 @@ export function AppMenu() {
           <div className="my-1 border-t border-slate-100" />
           <Item onClick={() => choose(openSettingsDialog)}>AI settings</Item>
           <Item onClick={() => choose(() => setPage("backup"))}>Back up &amp; restore</Item>
-          {canInstall && <Item onClick={() => choose(() => void promptInstall())}>Install app</Item>}
-          {showAppleInstall && <Item onClick={() => choose(() => setPage("howto"))}>Add to Home Screen</Item>}
           <div className="my-1 border-t border-slate-100" />
           <p className="px-4 py-2 text-xs text-slate-400">
             Developed by {DEVELOPER} · v{APP_VERSION}

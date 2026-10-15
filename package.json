@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "description": "Adaptive learning coach: assesses a learner's current level on a technical skill, then teaches it at the right level.",
+  "author": "Sohel Pathan",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

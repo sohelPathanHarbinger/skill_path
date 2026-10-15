@@ -99,17 +99,6 @@ export function HowToUsePage() {
           Progress saves automatically. Your tracks are listed under <b>Your learning tracks</b> on the home page.
         </Step>
       </ol>
-      <Section title="Install SkillPath as an app">
-        <ul className={list}>
-          <li>
-            <b>Android, Chrome or Edge:</b> menu → <b>Install app</b>, or the install icon in the address bar.
-          </li>
-          <li>
-            <b>iPhone or iPad:</b> open SkillPath in Safari, tap <b>Share</b> → <b>Add to Home Screen</b>.
-          </li>
-        </ul>
-        <p>Installed, it opens in its own window and works offline for the tracks you already have.</p>
-      </Section>
       <Section title="Keep your progress safe">
         <p>
           Your tracks live only on this device. Menu → <b>Back up &amp; restore</b> → <b>Download backup</b> before you
@@ -147,8 +136,8 @@ export function DisclaimerPage() {
       <Section title="Your data stays on your device">
         <p>
           SkillPath has no account system and no server of its own. Your tracks are saved in this browser's storage on
-          this device, and the developer can't see them. Clearing browser data, uninstalling the app or using a private
-          window can delete them, so download a backup now and then.
+          this device, and the developer can't see them. Clearing browser data or using a private window can delete
+          them, so download a backup now and then.
         </p>
       </Section>
       <Section title="What is sent to the AI provider">

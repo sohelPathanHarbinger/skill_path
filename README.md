@@ -1,6 +1,6 @@
 # SkillPath — adaptive learning coach
 
-A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation. It is a **Progressive Web App (PWA)**: learners can install it on a phone or computer and open saved tracks offline.
+A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation.
 
 It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free tier, low effort) is the default. Learners can switch in the app's **Settings** popup to Anthropic Claude, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
 
@@ -10,9 +10,8 @@ It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free
 4. **Courses & materials.** Video courses, websites, books, docs and practice on different platforms, picked for the learner's goal and gaps.
 5. **Lessons.** A streamed tutor chat per module that explains, gives examples, asks questions and adapts ("explain another way", "go faster", …).
 6. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
-7. **Installable app.** Install it from the browser on Android, iPhone or desktop. Saved tracks open offline, and a new version announces itself with a **Reload** button.
-8. **Private by design.** No account and no server. Tracks stay on the device, the API key is encrypted on the device, and **Back up & restore** moves tracks between devices.
-9. **Help built in.** A ☰ menu with **How to use**, **About**, **Disclaimer & privacy**, **AI settings**, **Back up & restore** and **Install app**.
+7. **Private by design.** No account and no server. Tracks stay on the device, the API key is encrypted on the device, and **Back up & restore** moves tracks between devices.
+8. **Help built in.** A ☰ menu with **How to use**, **About**, **Disclaimer & privacy**, **AI settings** and **Back up & restore**.
 
 Designed and developed by **Sohel Pathan**.
 
@@ -28,7 +27,7 @@ Designed and developed by **Sohel Pathan**.
 ### 1. Install and start
 
 ```bash
-npm install      # once, and again after pulling changes (this version added vite-plugin-pwa)
+npm install      # once, and again after pulling changes
 npm run dev      # starts the app with hot reload
 ```
 
@@ -36,9 +35,9 @@ Open the URL it prints, usually **http://localhost:5173**. Press `Ctrl + C` in t
 
 | Command | Use it for |
 |---|---|
-| `npm run dev` | Everyday development, with hot reload. Install and offline mode are off here |
-| `npm run build` | Type-check, then build the production app (with the PWA files) into `dist/` |
-| `npm run preview` | Serve `dist/` at **http://localhost:4173** to try installing, offline mode and updates |
+| `npm run dev` | Everyday development, with hot reload |
+| `npm run build` | Type-check, then build the production app into `dist/` |
+| `npm run preview` | Serve `dist/` at **http://localhost:4173** to check the production build |
 | `npm run typecheck` | Type-check only |
 
 ### 2. Choose your AI in the Settings popup
@@ -89,27 +88,13 @@ npm run preview   # serves the built app at http://localhost:4173
 
 > **About API keys.** Keys in `.env.local` are used by `npm run dev` only; `npm run build` leaves them out, so a deployed `dist/` never contains your keys. In the built app each learner pastes their **own** key in Settings. It is encrypted with AES-GCM (Web Crypto) using a non-extractable device key kept in IndexedDB, decrypted only in memory, and sent only to the chosen provider. Keys saved in plain text by older versions are encrypted automatically on first start.
 
-### 4. Install as an app (PWA)
-
-The production build includes a web app manifest, icons and a service worker that caches the app's own files (AI requests are never cached). To try it locally, run `npm run build` then `npm run preview` and open the printed URL in Chrome or Edge.
-
-- **Android, Chrome, Edge:** menu (☰) → **Install app**, or the install icon in the address bar.
-- **iPhone, iPad:** open the site in Safari → **Share** → **Add to Home Screen**.
-- **Updates:** when a new version is deployed, the app shows **A new version of SkillPath is ready** with a **Reload** button.
-- **Offline:** saved tracks open without a connection; lessons, quizzes and new tracks need the internet.
-
-Hosting must be **HTTPS** (Vercel, Netlify and Cloudflare Pages all are). Icons live in `public/`; the logo source is `public/favicon.svg`.
-
-### 5. Deploy (Vercel) and get an Android app
+### 4. Deploy (Vercel)
 
 1. Push the repository to GitHub.
 2. On [vercel.com](https://vercel.com): **Add New → Project**, import the repository. Vercel detects Vite (build `npm run build`, output `dist`).
 3. Don't add any `VITE_*_API_KEY` variables: learners enter their own key.
 4. Deploy. Every push to `main` redeploys, and other branches get their own preview URL.
 
-**Android APK:** enter the deployed URL at [pwabuilder.com](https://www.pwabuilder.com) and download the Android package: an **APK** to install directly on phones, or an **AAB** for Google Play. Play also needs the `assetlinks.json` file PWABuilder gives you, placed at `public/.well-known/assetlinks.json`.
-
-**iPhone:** people install from Safari (**Share → Add to Home Screen**). The App Store needs a native wrapper such as Capacitor.
 
 ---
 
@@ -243,7 +228,6 @@ Work through the modules in order. The dashboard shows your progress, best quiz 
 | **Disclaimer & privacy** | How AI-generated content, learner data and API keys are handled |
 | **AI settings** | The same popup as the provider name in the header |
 | **Back up & restore** | Download every track as one JSON file, or restore tracks from one |
-| **Install app** | Shown when the browser can install SkillPath (on iPhone: Safari → **Add to Home Screen**) |
 
 ### Coming back later
 
@@ -290,11 +274,9 @@ src/
   components/              React screens: SettingsDialog, AIQuickSwitch, AIErrorPanel, Home,
                            AssessmentView, BuildingView, Dashboard, ResourcesPanel, ModuleView,
                            TutorChat, QuizPanel, AppMenu (☰ menu), InfoPages (About, How to use,
-                           Disclaimer), BackupPanel, AppStatus (offline banner, update notice)
-  hooks/                   hash router, useTrack, useSettings, useSettingsDialog, useInstallPrompt,
-                           useOnline
-public/                    logo (favicon.svg) and the PWA icons
-vite.config.ts             Vite, Tailwind, and the PWA manifest + service worker settings
+                           Disclaimer), BackupPanel
+  hooks/                   hash router, useTrack, useSettings, useSettingsDialog
+public/                    logo (favicon.svg, favicon.ico)
 docs/                      User Guide, Developer Guide, presentation and talking notes
 ```
 
@@ -315,7 +297,7 @@ How it stays reliable across very different AIs:
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
 - **Default AI.** `VITE_AI_PROVIDER` in `.env.local`, or the fallbacks in `src/config.ts` and `defaultProviderId()` in `src/lib/settings.ts`.
-- **Logo and app icons.** `public/favicon.svg` plus the PNG/ICO icons; the icon list and app colours are in `vite.config.ts`.
+- **Logo.** `public/favicon.svg` (and `public/favicon.ico` for older browsers).
 - **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
 - **Version, credit and copyright.** `version` in `package.json`; `DEVELOPER` and `COPYRIGHT_HOLDER` in `src/lib/appInfo.ts`; `LICENSE`.
 
@@ -335,8 +317,6 @@ How it stays reliable across very different AIs:
 | Settings seem ignored | Saved Settings override `.env.local`. Click **Reset to defaults** in Settings to use `.env.local` again |
 | `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
 | The default AI is still Claude on your machine | Your `.env.local` overrides the default. Set `VITE_AI_PROVIDER=gemini` and leave `VITE_AI_MODEL` empty |
-| No **Install app** in the menu | Installing needs a production build (`npm run build` + `npm run preview`, or the deployed site), HTTPS or `localhost`, and Chrome or Edge. On iPhone use Safari → **Add to Home Screen** |
-| A deployed change doesn't show | The service worker serves the cached version until the new one takes over. Click **Reload** on the new-version notice, or close every SkillPath tab |
 | The key is forgotten after every reload | Private window, or an `http://` network address where Web Crypto isn't available. Use a normal window, `localhost` or HTTPS |
 | **"That file isn't a SkillPath backup"** | Pick the `.json` file made by **Download backup** |
 
@@ -351,8 +331,8 @@ How it stays reliable across very different AIs:
 
 | File | For |
 |---|---|
-| [docs/USER_GUIDE.docx](docs/USER_GUIDE.docx) | Learners: getting a key, installing the app, taking a course, backups, privacy, FAQ |
-| [docs/DEVELOPER_GUIDE.docx](docs/DEVELOPER_GUIDE.docx) | Developers: running, architecture, prompts, encrypted keys, PWA, deploying, security |
+| [docs/USER_GUIDE.docx](docs/USER_GUIDE.docx) | Learners: getting a key, taking a course, the ☰ menu, backups, privacy, FAQ |
+| [docs/DEVELOPER_GUIDE.docx](docs/DEVELOPER_GUIDE.docx) | Developers: running, architecture, prompts, encrypted keys, deploying, security |
 | [docs/SkillPath-Presentation.pptx](docs/SkillPath-Presentation.pptx) | A 17-slide presentation of the project |
 | [docs/Presentation-Talking-Notes.docx](docs/Presentation-Talking-Notes.docx) | Speaker notes and likely questions for that presentation |
 
