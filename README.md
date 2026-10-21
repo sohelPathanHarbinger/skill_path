@@ -48,36 +48,11 @@ The first time you open the app (and whenever the chosen AI still needs a key), 
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
 | **API URL** | Only for **Custom**: where the service lives |
-| **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key, encrypted on this device: providers with a saved key show **✓ key saved** in the list, and **Remove** deletes one |
+| **API key** | Your key for that provider (**Show** reveals what you type). Each provider remembers its own key, encrypted on this device. A saved key shows as **✓ Saved key ending …1234**, never in full, with **Replace** and **Remove**, and is marked **✓ key saved** in the list |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
 
 Click **Save** to use your choices, or **Use defaults** (or ✕ / `Esc`) to close without changes. Saved settings take effect immediately and are remembered on this device (the key encrypted). The provider's name in the top-right corner reopens Settings any time, and **Reset to defaults** clears everything you saved. The footer shows the AI, model and effort in use.
-
-### Optional: set defaults in `.env.local`
-
-To avoid typing keys into the popup, or to change the default AI, copy the example file and fill in what you need:
-
-```bash
-# macOS / Linux / Git Bash
-cp .env.example .env.local
-```
-
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env.local
-```
-
-```
-VITE_AI_PROVIDER=gemini           # the default AI (see the tables below for ids)
-VITE_AI_MODEL=                    # empty = that AI's recommended model
-VITE_AI_EFFORT=low
-VITE_GEMINI_API_KEY=AIza...       # one variable per provider; fill in only what you use
-```
-
-Restart `npm run dev` after changing it, because this file is read only at startup. API keys here are used by `npm run dev` only; they are never built into the app.
-
-**Which setting wins:** a value saved in the Settings popup → otherwise `.env.local` → otherwise the built-in default.
 
 ### 3. Production build
 
@@ -86,13 +61,13 @@ npm run build     # type-checks, then builds into dist/
 npm run preview   # serves the built app at http://localhost:4173
 ```
 
-> **About API keys.** Keys in `.env.local` are used by `npm run dev` only; `npm run build` leaves them out, so a deployed `dist/` never contains your keys. In the built app each learner pastes their **own** key in Settings. It is encrypted with AES-GCM (Web Crypto) using a non-extractable device key kept in IndexedDB, decrypted only in memory, and sent only to the chosen provider. Keys saved in plain text by older versions are encrypted automatically on first start.
+> **About API keys.** There are no keys in the code, in the build or in any config file. Each learner pastes their **own** key in Settings. It is encrypted with AES-GCM (Web Crypto) using a non-extractable device key kept in IndexedDB, decrypted only in memory, and sent only to the chosen provider. Keys saved in plain text by older versions are encrypted automatically on first start.
 
 ### 4. Deploy (Vercel)
 
 1. Push the repository to GitHub.
 2. On [vercel.com](https://vercel.com): **Add New → Project**, import the repository. Vercel detects Vite (build `npm run build`, output `dist`).
-3. Don't add any `VITE_*_API_KEY` variables: learners enter their own key.
+3. No environment variables are needed: learners enter their own key in the app.
 4. Deploy. Every push to `main` redeploys, and other branches get their own preview URL.
 
 
@@ -253,7 +228,6 @@ There is no backend and no database. The browser talks to the chosen AI provider
 
 ```
 src/
-  config.ts                defaults from .env.local: default AI, model, effort, keys
   lib/
     ai/
       providers.ts         the provider catalog: URLs, free-tier notes, models, effort options
@@ -290,13 +264,13 @@ How it stays reliable across very different AIs:
 
 ## Customising
 
-- **AI, key, model and effort.** The Settings popup, or `.env.local` for defaults.
+- **AI, key, model and effort.** The Settings popup.
 - **Providers, suggested models, free-tier notes.** `PROVIDERS` in `src/lib/ai/providers.ts`. Adding another OpenAI-compatible service is one new entry there.
 - **Course platforms and links.** `PLATFORMS` in `src/lib/resources.ts`.
 - **Teaching style, question count, pass rules.** Edit the prompts in `src/lib/prompts.ts`.
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
-- **Default AI.** `VITE_AI_PROVIDER` in `.env.local`, or the fallbacks in `src/config.ts` and `defaultProviderId()` in `src/lib/settings.ts`.
+- **Default AI.** `DEFAULT_PROVIDER` in `src/lib/settings.ts`. Its model and effort follow from it: that AI's recommended model, and low effort.
 - **Logo.** `public/favicon.svg` (and `public/favicon.ico` for older browsers).
 - **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
 - **Version, credit and copyright.** `version` in `package.json`; `DEVELOPER` and `COPYRIGHT_HOLDER` in `src/lib/appInfo.ts`; `LICENSE`.
@@ -314,9 +288,7 @@ How it stays reliable across very different AIs:
 | **"… is out of credit"** | Add credit on the provider's site, or switch to a free option |
 | **"… kept replying in an unexpected format"** | That model struggles with structured replies. Pick a larger model, or a provider with JSON schema support (Claude, OpenAI, Gemini, Groq, Mistral) |
 | A reply stopped halfway | Click **Get reply** or **Try again**. Nothing you've done is lost |
-| Settings seem ignored | Saved Settings override `.env.local`. Click **Reset to defaults** in Settings to use `.env.local` again |
 | `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
-| The default AI is still Claude on your machine | Your `.env.local` overrides the default. Set `VITE_AI_PROVIDER=gemini` and leave `VITE_AI_MODEL` empty |
 | The key is forgotten after every reload | Private window, or an `http://` network address where Web Crypto isn't available. Use a normal window, `localhost` or HTTPS |
 | **"That file isn't a SkillPath backup"** | Pick the `.json` file made by **Download backup** |
 

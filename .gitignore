@@ -1,7 +1,7 @@
 node_modules
 dist
 *.local
+# SkillPath doesn't use .env files; any stray ones (they may hold API keys) stay out of git.
 .env
 .env.*
-!.env.example
 .DS_Store

@@ -1,8 +1,7 @@
 // The AI settings in use: choices saved from the Settings popup override the
-// defaults from .env.local (config.ts). Saved choices live on this device only:
-// provider, model and effort in localStorage, API keys encrypted in IndexedDB
-// (secrets.ts). Call initSettings() once at startup to load the keys.
-import { ENV_CUSTOM_BASE_URL, ENV_EFFORT, ENV_KEYS, ENV_MODEL, ENV_PROVIDER } from "../config";
+// built-in defaults below. Saved choices live on this device only: provider, model
+// and effort in localStorage, API keys encrypted in IndexedDB (secrets.ts). Call
+// initSettings() once at startup to load the keys.
 import { CUSTOM_ID, findProvider, getProvider } from "./ai/providers";
 import type { AIConfig, JsonMode } from "./ai/types";
 import { loadApiKeys, saveApiKeys } from "./secrets";
@@ -38,41 +37,29 @@ const LEGACY_KEY = "skillpath.settings";
 const JSON_MODES: JsonMode[] = ["json_schema", "json_object", "prompt"];
 const listeners = new Set<() => void>();
 
+/** The AI used until the learner picks another one in Settings. */
+const DEFAULT_PROVIDER = "gemini";
+
 export function defaultProviderId(): string {
-  return findProvider(ENV_PROVIDER)?.id ?? "gemini";
+  return findProvider(DEFAULT_PROVIDER)?.id ?? CUSTOM_ID;
 }
 
 /** Effort to use when the learner hasn't picked one. "low" keeps token use down. */
 function defaultEffort(providerId: string, model: string): string | undefined {
   const options = getProvider(providerId).effortOptions(model);
-  if (!options) return undefined;
-  const preferred = providerId === defaultProviderId() ? ENV_EFFORT : undefined;
-  if (preferred && options.includes(preferred)) return preferred;
-  if (providerId === CUSTOM_ID) return undefined;
+  if (!options || providerId === CUSTOM_ID) return undefined;
   return options.includes("low") ? "low" : undefined;
 }
 
-/** The values a provider uses when nothing is saved for it. */
-export function providerDefaults(providerId: string): { apiKey: string; model: string; baseUrl: string } {
+/** The model and URL a provider uses when nothing is saved for it. */
+export function providerDefaults(providerId: string): { model: string; baseUrl: string } {
   const provider = getProvider(providerId);
-  return {
-    apiKey: ENV_KEYS[provider.id]?.trim() ?? "",
-    model: (provider.id === defaultProviderId() && ENV_MODEL) || provider.defaultModel,
-    baseUrl: provider.id === CUSTOM_ID ? ENV_CUSTOM_BASE_URL : provider.baseUrl,
-  };
+  return { model: provider.defaultModel, baseUrl: provider.baseUrl };
 }
 
-/** Where a provider's API key comes from: saved (encrypted) in Settings, .env.local (dev only), or nowhere yet. */
-export function keySource(stored: StoredSettings, providerId: string): "saved" | "env" | null {
-  if (stored.providers[providerId]?.apiKey) return "saved";
-  if (providerDefaults(providerId).apiKey) return "env";
-  return null;
-}
-
-/** Shown after a provider's name in the AI lists, so providers that already have a key stand out. */
+/** Shown after a provider's name in the AI lists, so providers that already have a saved key stand out. */
 export function keyMark(stored: StoredSettings, providerId: string): string {
-  const source = keySource(stored, providerId);
-  return source === "saved" ? " · ✓ key saved" : source === "env" ? " · ✓ key in .env.local" : "";
+  return stored.providers[providerId]?.apiKey ? " · ✓ key saved" : "";
 }
 
 export function resolveConfig(
@@ -93,7 +80,7 @@ export function resolveConfig(
   return {
     provider,
     providerName: provider.id === CUSTOM_ID && extras.customName ? extras.customName : provider.name,
-    apiKey: overrides.apiKey?.trim() || defaults.apiKey,
+    apiKey: overrides.apiKey?.trim() ?? "",
     baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl),
     model,
     effort,
