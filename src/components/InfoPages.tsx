@@ -21,7 +21,7 @@ export function AboutPage() {
   return (
     <div className={page}>
       <div className="flex items-center gap-4">
-        <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-14 w-14" />
+        <img src="favicon.svg" alt="" className="h-14 w-14" />
         <div>
           <p className="text-base font-semibold text-slate-900">SkillPath</p>
           <p className="text-slate-500">Adaptive learning coach · Version {APP_VERSION}</p>

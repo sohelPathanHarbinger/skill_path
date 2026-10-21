@@ -28,7 +28,7 @@ const label = "block text-sm font-medium text-slate-700";
 
 /**
  * Choose the AI provider, API key, model and effort. Saved values override the
- * .env.local defaults; empty fields, or closing without saving, keep the defaults.
+ * built-in defaults; empty fields, or closing without saving, keep the defaults.
  */
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { config: active, stored, keysSaved } = useSettings();
@@ -39,6 +39,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
     stored.customJsonMode ?? getProvider(CUSTOM_ID).jsonMode,
   );
   const [showKey, setShowKey] = useState(false);
+  // Replacing a saved key: the new key is typed into an empty box, never over the saved one.
+  const [replacing, setReplacing] = useState(false);
+  const [newKey, setNewKey] = useState("");
   const [loadedModels, setLoadedModels] = useState<Record<string, string[]>>({});
   const [loadStatus, setLoadStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +58,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const draft = drafts[providerId] ?? {};
   const defaults = providerDefaults(providerId);
   const extras = { customName: customName.trim() || undefined, customJsonMode };
-  const preview = resolveConfig(providerId, draft, extras);
+  // A new key typed while replacing is what Load models and Save use; an empty box keeps the saved one.
+  const typedKey = replacing ? newKey.trim() : "";
+  const preview = resolveConfig(providerId, typedKey ? { ...draft, apiKey: typedKey } : draft, extras);
   const effortOptions = provider.effortOptions(preview.model);
   const defaultEffort = resolveConfig(providerId, { ...draft, effort: undefined }, extras).effort;
   const suggested = provider.models.map((m) => m.id);
@@ -72,6 +77,18 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       providers: { ...s.providers, [providerId]: { ...s.providers[providerId], apiKey: undefined } },
     }));
     setDrafts((prev) => ({ ...prev, [providerId]: { ...prev[providerId], apiKey: undefined } }));
+    stopReplacing();
+  }
+
+  function startReplacing() {
+    setReplacing(true);
+    setNewKey("");
+    setShowKey(false);
+  }
+
+  function stopReplacing() {
+    setReplacing(false);
+    setNewKey("");
     setShowKey(false);
   }
 
@@ -81,7 +98,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   function chooseProvider(id: string) {
     setProviderId(id);
-    setShowKey(false);
+    stopReplacing();
     setLoadStatus(null);
   }
 
@@ -109,7 +126,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    saveSettings({ provider: providerId, providers: drafts, ...extras });
+    const providers = typedKey ? { ...drafts, [providerId]: { ...drafts[providerId], apiKey: typedKey } } : drafts;
+    saveSettings({ provider: providerId, providers, ...extras });
     onClose();
   }
 
@@ -120,6 +138,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
     setCustomName("");
     setCustomJsonMode(getProvider(CUSTOM_ID).jsonMode);
     setLoadStatus(null);
+    stopReplacing();
   }
 
   return (
@@ -251,39 +270,53 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
         {/* API key */}
         <div className="space-y-2">
-          <label htmlFor="settings-key" className={label}>
+          <label htmlFor={savedKey && !replacing ? undefined : "settings-key"} className={label}>
             API key{provider.keyRequired ? "" : " (optional)"}
           </label>
-          <div className="flex gap-2">
-            <input
-              id="settings-key"
-              type={showKey ? "text" : "password"}
-              autoComplete="off"
-              spellCheck={false}
-              value={draft.apiKey ?? ""}
-              onChange={(e) => update({ apiKey: e.target.value })}
-              placeholder={
-                defaults.apiKey
-                  ? `Default: key from .env.local (…${defaults.apiKey.slice(-4)})`
-                  : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
-              }
-              className={`${field} min-w-0 font-mono`}
-            />
-            <Button variant="secondary" onClick={() => setShowKey((v) => !v)} className="shrink-0">
-              {showKey ? "Hide" : "Show"}
-            </Button>
-          </div>
-          {savedKey && draft.apiKey === savedKey && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
-              <span>
-                ✓ Key saved, ending <span className="font-mono">…{savedKey.slice(-4)}</span>. No need to enter it again.
+          {savedKey && !replacing ? (
+            // A saved key is never shown again, only its last 4 characters.
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5 ring-1 ring-emerald-200">
+              <span className="text-sm text-emerald-800">
+                ✓ Saved key ending <span className="font-mono">…{savedKey.slice(-4)}</span>
               </span>
-              <button type="button" onClick={removeKey} className="font-medium text-rose-700 hover:underline">
-                Remove
-              </button>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={startReplacing}>
+                  Replace
+                </Button>
+                <Button variant="danger" onClick={removeKey}>
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                id="settings-key"
+                type={showKey ? "text" : "password"}
+                autoComplete="off"
+                spellCheck={false}
+                autoFocus={replacing}
+                value={replacing ? newKey : (draft.apiKey ?? "")}
+                onChange={(e) => (replacing ? setNewKey(e.target.value) : update({ apiKey: e.target.value }))}
+                placeholder={
+                  replacing
+                    ? "Paste the new key"
+                    : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
+                }
+                className={`${field} min-w-0 font-mono`}
+              />
+              <Button variant="secondary" onClick={() => setShowKey((v) => !v)} className="shrink-0">
+                {showKey ? "Hide" : "Show"}
+              </Button>
+              {replacing && (
+                <Button variant="ghost" onClick={stopReplacing} className="shrink-0">
+                  Cancel
+                </Button>
+              )}
             </div>
           )}
           <p className="text-xs text-slate-500">
+            {replacing && "The new key replaces the saved one when you click Save. "}
             {keysSaved
               ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
               : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}

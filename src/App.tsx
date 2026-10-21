@@ -28,7 +28,7 @@ export default function App() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur">
         <div className={`${SHELL} flex items-center justify-between py-3`}>
           <a href="#/" className="flex items-center gap-2 font-semibold text-slate-900">
-            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-8 w-8" />
+            <img src="favicon.svg" alt="" className="h-8 w-8" />
             SkillPath
           </a>
           <div className="flex items-center gap-1">
