@@ -7,9 +7,11 @@ import { describeError } from "../lib/learning";
 import {
   clearSettings,
   defaultProviderId,
+  keyMark,
   providerDefaults,
   resolveConfig,
   saveSettings,
+  updateSettings,
   type ProviderOverrides,
 } from "../lib/settings";
 import { Button } from "./ui";
@@ -59,6 +61,19 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const suggested = provider.models.map((m) => m.id);
   const modelIds = [...suggested, ...(loadedModels[providerId] ?? []).filter((id) => !suggested.includes(id))];
   const hasSaved = Boolean(stored.provider) || Object.keys(stored.providers).length > 0;
+
+  // The key saved (encrypted) for this provider, as opposed to one typed here but not saved yet.
+  const savedKey = stored.providers[providerId]?.apiKey;
+
+  /** Deletes this provider's saved key straight away. */
+  function removeKey() {
+    updateSettings((s) => ({
+      ...s,
+      providers: { ...s.providers, [providerId]: { ...s.providers[providerId], apiKey: undefined } },
+    }));
+    setDrafts((prev) => ({ ...prev, [providerId]: { ...prev[providerId], apiKey: undefined } }));
+    setShowKey(false);
+  }
 
   function update(patch: Partial<ProviderOverrides>) {
     setDrafts((prev) => ({ ...prev, [providerId]: { ...prev[providerId], ...patch } }));
@@ -159,6 +174,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                     <option key={p.id} value={p.id}>
                       {p.name}
                       {p.id === defaultProviderId() ? " (default)" : ""}
+                      {keyMark(stored, p.id)}
                     </option>
                   ))}
                 </optgroup>
@@ -257,6 +273,16 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               {showKey ? "Hide" : "Show"}
             </Button>
           </div>
+          {savedKey && draft.apiKey === savedKey && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
+              <span>
+                ✓ Key saved, ending <span className="font-mono">…{savedKey.slice(-4)}</span>. No need to enter it again.
+              </span>
+              <button type="button" onClick={removeKey} className="font-medium text-rose-700 hover:underline">
+                Remove
+              </button>
+            </div>
+          )}
           <p className="text-xs text-slate-500">
             {keysSaved
               ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`

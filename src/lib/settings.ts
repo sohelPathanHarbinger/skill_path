@@ -62,6 +62,19 @@ export function providerDefaults(providerId: string): { apiKey: string; model: s
   };
 }
 
+/** Where a provider's API key comes from: saved (encrypted) in Settings, .env.local (dev only), or nowhere yet. */
+export function keySource(stored: StoredSettings, providerId: string): "saved" | "env" | null {
+  if (stored.providers[providerId]?.apiKey) return "saved";
+  if (providerDefaults(providerId).apiKey) return "env";
+  return null;
+}
+
+/** Shown after a provider's name in the AI lists, so providers that already have a key stand out. */
+export function keyMark(stored: StoredSettings, providerId: string): string {
+  const source = keySource(stored, providerId);
+  return source === "saved" ? " · ✓ key saved" : source === "env" ? " · ✓ key in .env.local" : "";
+}
+
 export function resolveConfig(
   providerId: string,
   overrides: ProviderOverrides,

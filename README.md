@@ -42,13 +42,13 @@ Open the URL it prints, usually **http://localhost:5173**. Press `Ctrl + C` in t
 
 ### 2. Choose your AI in the Settings popup
 
-When the app opens, the **AI settings** popup appears with **Google Gemini** preselected. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), paste it and click **Save**. Every learner uses their own key: the app never ships with one.
+The first time you open the app (and whenever the chosen AI still needs a key), the **AI settings** popup appears with **Google Gemini** preselected. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), paste it and click **Save**. Every learner uses their own key: the app never ships with one.
 
 | Setting | What it does |
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
 | **API URL** | Only for **Custom**: where the service lives |
-| **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key, encrypted on this device |
+| **API key** | Your key for that provider (**Show** reveals it). Each provider remembers its own key, encrypted on this device: providers with a saved key show **✓ key saved** in the list, and **Remove** deletes one |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
 
