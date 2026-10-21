@@ -4,7 +4,7 @@ import { openSettingsDialog } from "../hooks/useSettingsDialog";
 import { listModels } from "../lib/ai";
 import { GROUP_LABEL, GROUP_ORDER, PROVIDERS } from "../lib/ai/providers";
 import { describeError } from "../lib/learning";
-import { getSettings, updateSettings, type ProviderOverrides } from "../lib/settings";
+import { getSettings, keyMark, updateSettings, type ProviderOverrides } from "../lib/settings";
 import { Button } from "./ui";
 
 const field =
@@ -113,6 +113,7 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
                 {PROVIDERS.filter((p) => p.group === group).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
+                    {keyMark(stored, p.id)}
                   </option>
                 ))}
               </optgroup>
