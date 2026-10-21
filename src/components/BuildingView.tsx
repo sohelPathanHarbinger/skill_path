@@ -3,7 +3,8 @@ import { buildPlan, buildProfile } from "../lib/learning";
 import { toPlan } from "../lib/progress";
 import type { Track, UpdateTrack } from "../lib/types";
 import { AIErrorPanel } from "./AIErrorPanel";
-import { Card } from "./ui";
+import { SkillCheckSummary } from "./AssessmentView";
+import { Card, SIDE_COLUMN, WITH_SIDE_PANEL } from "./ui";
 
 type Step = "profile" | "plan";
 
@@ -38,18 +39,25 @@ export function BuildingView({ track, update }: { track: Track; update: UpdateTr
   }, [run]);
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 pt-8">
-      <Card className="space-y-5">
-        <div>
-          <h1 className="text-xl font-semibold">Building your {track.skill} path</h1>
-          <p className="mt-1 text-sm text-slate-600">This usually takes under a minute.</p>
-        </div>
-        <ul className="space-y-3 text-sm">
-          <StepRow label="Analysing your answers" state={step === "profile" ? (failed ? "failed" : "active") : "done"} />
-          <StepRow label="Designing your learning plan" state={step === "plan" ? (failed ? "failed" : "active") : "waiting"} />
-        </ul>
-      </Card>
-      {failed && <AIErrorPanel error={error} onRetry={run} />}
+    // Progress fills the width; on wide screens the skill-check summary sits alongside.
+    <div className={WITH_SIDE_PANEL}>
+      <div className="min-w-0 space-y-4">
+        <Card className="space-y-5">
+          <div>
+            <h1 className="text-xl font-semibold">Building your {track.skill} path</h1>
+            <p className="mt-1 text-sm text-slate-600">This usually takes under a minute.</p>
+          </div>
+          <ul className="space-y-3 text-sm">
+            <StepRow label="Analysing your answers" state={step === "profile" ? (failed ? "failed" : "active") : "done"} />
+            <StepRow label="Designing your learning plan" state={step === "plan" ? (failed ? "failed" : "active") : "waiting"} />
+          </ul>
+        </Card>
+        {failed && <AIErrorPanel error={error} onRetry={run} />}
+      </div>
+
+      <aside className={SIDE_COLUMN}>
+        <SkillCheckSummary track={track} loading={false} />
+      </aside>
     </div>
   );
 }

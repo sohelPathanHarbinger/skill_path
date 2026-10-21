@@ -9,7 +9,7 @@ import { StatusDot } from "./Dashboard";
 import { QuizPanel } from "./QuizPanel";
 import { NotFound } from "./TrackPage";
 import { TutorChat } from "./TutorChat";
-import { BackLink, Badge, SidePanel, Spinner } from "./ui";
+import { BackLink, Badge, SIDE_COLUMN, SidePanel, Spinner, WITH_SIDE_PANEL } from "./ui";
 
 export function ModulePage({ trackId, moduleId }: { trackId: string; moduleId: string }) {
   const { track, update } = useTrack(trackId);
@@ -37,9 +37,9 @@ function ModuleView({ track, module, update }: { track: Track; module: PlanModul
   }, [module.id, module.status, update]);
 
   return (
-    // Lesson column at a comfortable reading width; on wide screens the plan and the
-    // module's materials sit in a side column that scrolls on its own.
-    <div className="mx-auto grid max-w-7xl items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+    // The lesson fills the width; on wide screens the plan and the module's materials
+    // sit in a side column that scrolls on its own.
+    <div className={WITH_SIDE_PANEL}>
       <div className="min-w-0 space-y-6">
         <header className="space-y-3">
           <BackLink href={`#/track/${track.id}`}>{track.skill} plan</BackLink>
@@ -102,7 +102,7 @@ function ModuleView({ track, module, update }: { track: Track; module: PlanModul
         </div>
       </div>
 
-      <aside className="hidden space-y-4 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <aside className={SIDE_COLUMN}>
         <PlanNav track={track} currentId={module.id} />
         {materials.length > 0 && (
           <SidePanel title="Recommended materials" aside={materials.length}>

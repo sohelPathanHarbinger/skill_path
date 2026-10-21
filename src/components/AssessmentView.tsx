@@ -5,7 +5,7 @@ import { clearTrackDraft } from "../lib/trackDraft";
 import type { AssessmentExchange, Track, UpdateTrack } from "../lib/types";
 import { AIErrorPanel } from "./AIErrorPanel";
 import { Markdown } from "./Markdown";
-import { BackLink, Badge, Bar, Button, Card, difficultyTone, SidePanel, Spinner } from "./ui";
+import { BackLink, Badge, Bar, Button, Card, difficultyTone, SIDE_COLUMN, SidePanel, Spinner, WITH_SIDE_PANEL } from "./ui";
 
 /** Hard stop in case the assessor never marks the assessment complete. */
 const MAX_QUESTIONS = 12;
@@ -64,9 +64,9 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
   }
 
   return (
-    // Questions at a comfortable reading width; on wide screens a side column shows
-    // the topics covered so far, what the learner told us, and tips.
-    <div className="mx-auto grid max-w-6xl items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+    // Questions fill the width; on wide screens a side column shows the topics covered
+    // so far, what the learner told us, and tips.
+    <div className={WITH_SIDE_PANEL}>
       <div className="min-w-0 space-y-6">
         <header className="space-y-3">
           <BackLink href="#/">All tracks</BackLink>
@@ -113,15 +113,8 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
         <div ref={bottomRef} />
       </div>
 
-      <aside className="hidden space-y-4 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-        <TopicsPanel exchanges={exchanges} loading={loading} />
-        <SidePanel title="What you told us">
-          <dl className="space-y-2 text-sm">
-            <InfoRow label="Skill" value={track.skill} />
-            <InfoRow label="Goal" value={track.goal} />
-            <InfoRow label="Experience so far" value={track.background} />
-          </dl>
-        </SidePanel>
+      <aside className={SIDE_COLUMN}>
+        <SkillCheckSummary track={track} loading={loading} />
         <SidePanel title="Tips">
           <ul className="list-disc space-y-1.5 pl-4 text-sm text-slate-600">
             <li>
@@ -135,6 +128,22 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
         </SidePanel>
       </aside>
     </div>
+  );
+}
+
+/** Topics asked so far and what the learner told us (also shown while the plan is built). */
+export function SkillCheckSummary({ track, loading }: { track: Track; loading: boolean }) {
+  return (
+    <>
+      <TopicsPanel exchanges={track.assessment} loading={loading} />
+      <SidePanel title="What you told us">
+        <dl className="space-y-2 text-sm">
+          <InfoRow label="Skill" value={track.skill} />
+          <InfoRow label="Goal" value={track.goal} />
+          <InfoRow label="Experience so far" value={track.background} />
+        </dl>
+      </SidePanel>
+    </>
   );
 }
 

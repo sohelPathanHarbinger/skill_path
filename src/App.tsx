@@ -9,9 +9,9 @@ import { useSettings } from "./hooks/useSettings";
 import { closeSettingsDialog, openSettingsDialog, useSettingsDialogOpen } from "./hooks/useSettingsDialog";
 import { COPYRIGHT, DEVELOPER } from "./lib/appInfo";
 
-// One fluid width for header, page and footer: it fills the window up to 1600px,
+// One fluid width for header, page and footer: it fills the window up to 1920px,
 // with side padding that grows on larger screens.
-const SHELL = "mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8";
+const SHELL = "mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 2xl:px-10";
 
 export default function App() {
   const route = useHashRoute();
