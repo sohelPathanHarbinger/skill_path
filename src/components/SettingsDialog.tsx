@@ -152,7 +152,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto my-8 w-full max-w-xl space-y-5 rounded-2xl bg-white p-6 shadow-xl"
+        className="mx-auto my-8 w-full max-w-xl space-y-5 rounded-2xl bg-white p-6 shadow-xl lg:my-6 lg:w-[80vw] lg:max-w-none lg:p-8"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -174,224 +174,230 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Provider */}
-        <div className="space-y-2">
-          <label htmlFor="settings-provider" className={label}>
-            AI provider
-          </label>
-          <select
-            id="settings-provider"
-            value={providerId}
-            onChange={(e) => chooseProvider(e.target.value)}
-            className={field}
-          >
-            {GROUP_ORDER.map((group) => {
-              const items = PROVIDERS.filter((p) => p.group === group);
-              return (
-                <optgroup key={group} label={GROUP_LABEL[group]}>
-                  {items.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                      {p.id === defaultProviderId() ? " (default)" : ""}
-                      {keyMark(stored, p.id)}
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-          </select>
-          <div className="space-y-1.5 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
-            <p>
-              <span className="font-medium text-slate-800">{provider.group === "free" ? "Free option: " : "Pricing: "}</span>
-              {provider.pricing}
-            </p>
-            {provider.notes && <p>{provider.notes}</p>}
-            {provider.keyUrl && (
-              <p>
-                <a href={provider.keyUrl} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 underline">
-                  {provider.keyRequired ? "Get an API key ↗" : "Download ↗"}
-                </a>
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Custom provider name and JSON mode */}
-        {provider.id === CUSTOM_ID && (
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2 lg:gap-8">
+          <div className="min-w-0 space-y-5">
+            {/* Provider */}
             <div className="space-y-2">
-              <label htmlFor="settings-custom-name" className={label}>
-                Display name
-              </label>
-              <input
-                id="settings-custom-name"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="e.g. Company AI gateway"
-                className={field}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="settings-json-mode" className={label}>
-                Structured replies
+              <label htmlFor="settings-provider" className={label}>
+                AI provider
               </label>
               <select
-                id="settings-json-mode"
-                value={customJsonMode}
-                onChange={(e) => setCustomJsonMode(e.target.value as JsonMode)}
+                id="settings-provider"
+                value={providerId}
+                onChange={(e) => chooseProvider(e.target.value)}
                 className={field}
               >
-                {(Object.keys(JSON_MODE_LABEL) as JsonMode[]).map((mode) => (
-                  <option key={mode} value={mode}>
-                    {JSON_MODE_LABEL[mode]}
+                {GROUP_ORDER.map((group) => {
+                  const items = PROVIDERS.filter((p) => p.group === group);
+                  return (
+                    <optgroup key={group} label={GROUP_LABEL[group]}>
+                      {items.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.id === defaultProviderId() ? " (default)" : ""}
+                          {keyMark(stored, p.id)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+              </select>
+              <div className="space-y-1.5 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+                <p>
+                  <span className="font-medium text-slate-800">{provider.group === "free" ? "Free option: " : "Pricing: "}</span>
+                  {provider.pricing}
+                </p>
+                {provider.notes && <p>{provider.notes}</p>}
+                {provider.keyUrl && (
+                  <p>
+                    <a href={provider.keyUrl} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 underline">
+                      {provider.keyRequired ? "Get an API key ↗" : "Download ↗"}
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Custom provider name and JSON mode */}
+            {provider.id === CUSTOM_ID && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="settings-custom-name" className={label}>
+                    Display name
+                  </label>
+                  <input
+                    id="settings-custom-name"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="e.g. Company AI gateway"
+                    className={field}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="settings-json-mode" className={label}>
+                    Structured replies
+                  </label>
+                  <select
+                    id="settings-json-mode"
+                    value={customJsonMode}
+                    onChange={(e) => setCustomJsonMode(e.target.value as JsonMode)}
+                    className={field}
+                  >
+                    {(Object.keys(JSON_MODE_LABEL) as JsonMode[]).map((mode) => (
+                      <option key={mode} value={mode}>
+                        {JSON_MODE_LABEL[mode]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Base URL (custom endpoints) */}
+            {provider.editableBaseUrl && (
+              <div className="space-y-2">
+                <label htmlFor="settings-url" className={label}>
+                  API URL
+                </label>
+                <input
+                  id="settings-url"
+                  value={draft.baseUrl ?? ""}
+                  onChange={(e) => update({ baseUrl: e.target.value })}
+                  placeholder={defaults.baseUrl ? `Default: ${defaults.baseUrl}` : "https://your-service.example.com/v1"}
+                  spellCheck={false}
+                  className={`${field} font-mono`}
+                />
+              </div>
+            )}
+
+            {/* API key */}
+            <div className="space-y-2">
+              <label htmlFor={savedKey && !replacing ? undefined : "settings-key"} className={label}>
+                API key{provider.keyRequired ? "" : " (optional)"}
+              </label>
+              {savedKey && !replacing ? (
+                // A saved key is never shown again, only its last 4 characters.
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5 ring-1 ring-emerald-200">
+                  <span className="text-sm text-emerald-800">
+                    ✓ Saved key ending <span className="font-mono">…{savedKey.slice(-4)}</span>
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={startReplacing}>
+                      Replace
+                    </Button>
+                    <Button variant="danger" onClick={removeKey}>
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    id="settings-key"
+                    type={showKey ? "text" : "password"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    autoFocus={replacing}
+                    value={replacing ? newKey : (draft.apiKey ?? "")}
+                    onChange={(e) => (replacing ? setNewKey(e.target.value) : update({ apiKey: e.target.value }))}
+                    placeholder={
+                      replacing
+                        ? "Paste the new key"
+                        : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
+                    }
+                    className={`${field} min-w-0 font-mono`}
+                  />
+                  <Button variant="secondary" onClick={() => setShowKey((v) => !v)} className="shrink-0">
+                    {showKey ? "Hide" : "Show"}
+                  </Button>
+                  {replacing && (
+                    <Button variant="ghost" onClick={stopReplacing} className="shrink-0">
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-slate-500">
+                {replacing && "The new key replaces the saved one when you click Save. "}
+                {keysSaved
+                  ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
+                  : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
+              </p>
+            </div>
+
+          </div>
+          <div className="min-w-0 space-y-5">
+            {/* Model */}
+            <div className="space-y-2">
+              <label htmlFor="settings-model" className={label}>
+                Model
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="settings-model"
+                  list="settings-model-options"
+                  value={draft.model ?? ""}
+                  onChange={(e) => update({ model: e.target.value })}
+                  placeholder={defaults.model ? `Default: ${defaults.model}` : "Type a model id or click Load models"}
+                  spellCheck={false}
+                  className={`${field} min-w-0 font-mono`}
+                />
+                <Button variant="secondary" onClick={loadModels} disabled={loading} className="shrink-0">
+                  {loading ? "Loading…" : "Load models"}
+                </Button>
+              </div>
+              <datalist id="settings-model-options">
+                {modelIds.map((id) => (
+                  <option key={id} value={id} />
+                ))}
+              </datalist>
+              {provider.models.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {provider.models.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => update({ model: m.id })}
+                      className={`rounded-full px-3 py-1 text-xs ring-1 transition ${
+                        preview.model === m.id
+                          ? "bg-indigo-600 text-white ring-indigo-600"
+                          : "bg-white text-slate-600 ring-slate-200 hover:ring-indigo-300"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {loadStatus && <p className="text-xs text-slate-600">{loadStatus}</p>}
+            </div>
+
+            {/* Effort */}
+            <div className="space-y-2">
+              <label htmlFor="settings-effort" className={label}>
+                Effort
+              </label>
+              <select
+                id="settings-effort"
+                value={effortOptions && draft.effort && effortOptions.includes(draft.effort) ? draft.effort : ""}
+                onChange={(e) => update({ effort: e.target.value || undefined })}
+                disabled={!effortOptions}
+                className={field}
+              >
+                <option value="">Default ({defaultEffort ?? "not sent"})</option>
+                {(effortOptions ?? []).map((level) => (
+                  <option key={level} value={level}>
+                    {level}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-slate-500">
+                {effortOptions
+                  ? "How much the model thinks before answering. Lower effort uses fewer tokens."
+                  : "This model doesn't have an effort setting."}
+              </p>
             </div>
           </div>
-        )}
-
-        {/* Base URL (custom endpoints) */}
-        {provider.editableBaseUrl && (
-          <div className="space-y-2">
-            <label htmlFor="settings-url" className={label}>
-              API URL
-            </label>
-            <input
-              id="settings-url"
-              value={draft.baseUrl ?? ""}
-              onChange={(e) => update({ baseUrl: e.target.value })}
-              placeholder={defaults.baseUrl ? `Default: ${defaults.baseUrl}` : "https://your-service.example.com/v1"}
-              spellCheck={false}
-              className={`${field} font-mono`}
-            />
-          </div>
-        )}
-
-        {/* API key */}
-        <div className="space-y-2">
-          <label htmlFor={savedKey && !replacing ? undefined : "settings-key"} className={label}>
-            API key{provider.keyRequired ? "" : " (optional)"}
-          </label>
-          {savedKey && !replacing ? (
-            // A saved key is never shown again, only its last 4 characters.
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5 ring-1 ring-emerald-200">
-              <span className="text-sm text-emerald-800">
-                ✓ Saved key ending <span className="font-mono">…{savedKey.slice(-4)}</span>
-              </span>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={startReplacing}>
-                  Replace
-                </Button>
-                <Button variant="danger" onClick={removeKey}>
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                id="settings-key"
-                type={showKey ? "text" : "password"}
-                autoComplete="off"
-                spellCheck={false}
-                autoFocus={replacing}
-                value={replacing ? newKey : (draft.apiKey ?? "")}
-                onChange={(e) => (replacing ? setNewKey(e.target.value) : update({ apiKey: e.target.value }))}
-                placeholder={
-                  replacing
-                    ? "Paste the new key"
-                    : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
-                }
-                className={`${field} min-w-0 font-mono`}
-              />
-              <Button variant="secondary" onClick={() => setShowKey((v) => !v)} className="shrink-0">
-                {showKey ? "Hide" : "Show"}
-              </Button>
-              {replacing && (
-                <Button variant="ghost" onClick={stopReplacing} className="shrink-0">
-                  Cancel
-                </Button>
-              )}
-            </div>
-          )}
-          <p className="text-xs text-slate-500">
-            {replacing && "The new key replaces the saved one when you click Save. "}
-            {keysSaved
-              ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
-              : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
-          </p>
-        </div>
-
-        {/* Model */}
-        <div className="space-y-2">
-          <label htmlFor="settings-model" className={label}>
-            Model
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="settings-model"
-              list="settings-model-options"
-              value={draft.model ?? ""}
-              onChange={(e) => update({ model: e.target.value })}
-              placeholder={defaults.model ? `Default: ${defaults.model}` : "Type a model id or click Load models"}
-              spellCheck={false}
-              className={`${field} min-w-0 font-mono`}
-            />
-            <Button variant="secondary" onClick={loadModels} disabled={loading} className="shrink-0">
-              {loading ? "Loading…" : "Load models"}
-            </Button>
-          </div>
-          <datalist id="settings-model-options">
-            {modelIds.map((id) => (
-              <option key={id} value={id} />
-            ))}
-          </datalist>
-          {provider.models.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {provider.models.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => update({ model: m.id })}
-                  className={`rounded-full px-3 py-1 text-xs ring-1 transition ${
-                    preview.model === m.id
-                      ? "bg-indigo-600 text-white ring-indigo-600"
-                      : "bg-white text-slate-600 ring-slate-200 hover:ring-indigo-300"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {loadStatus && <p className="text-xs text-slate-600">{loadStatus}</p>}
-        </div>
-
-        {/* Effort */}
-        <div className="space-y-2">
-          <label htmlFor="settings-effort" className={label}>
-            Effort
-          </label>
-          <select
-            id="settings-effort"
-            value={effortOptions && draft.effort && effortOptions.includes(draft.effort) ? draft.effort : ""}
-            onChange={(e) => update({ effort: e.target.value || undefined })}
-            disabled={!effortOptions}
-            className={field}
-          >
-            <option value="">Default ({defaultEffort ?? "not sent"})</option>
-            {(effortOptions ?? []).map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-slate-500">
-            {effortOptions
-              ? "How much the model thinks before answering. Lower effort uses fewer tokens."
-              : "This model doesn't have an effort setting."}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">

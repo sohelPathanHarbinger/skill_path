@@ -80,7 +80,7 @@ export function AppMenu() {
       )}
 
       {page && (
-        <Dialog title={TITLES[page]} onClose={() => setPage(null)}>
+        <Dialog title={TITLES[page]} onClose={() => setPage(null)} size={page === "backup" ? "default" : "wide"}>
           {page === "about" ? (
             <AboutPage />
           ) : page === "howto" ? (

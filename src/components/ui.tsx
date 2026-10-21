@@ -34,7 +34,18 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
  * A popup over the page. Closes with ✕, Escape or a click outside it. Rendered into
  * <body> so it covers the whole window even when opened from the sticky header.
  */
-export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({
+  title,
+  onClose,
+  children,
+  size = "default",
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  /** "wide" takes 80% of the window from laptop width up, for long pages. */
+  size?: "default" | "wide";
+}) {
   const titleId = useId();
 
   useEffect(() => {
@@ -53,7 +64,12 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <div onClick={(e) => e.stopPropagation()} className="mx-auto my-8 w-full max-w-xl space-y-5 rounded-2xl bg-white p-6 shadow-xl">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`mx-auto my-8 w-full max-w-xl space-y-5 rounded-2xl bg-white p-6 shadow-xl ${
+          size === "wide" ? "lg:my-6 lg:w-[80vw] lg:max-w-none lg:p-8" : ""
+        }`}
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 id={titleId} className="text-lg font-semibold">
             {title}

@@ -14,12 +14,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const page = "space-y-5 text-sm leading-relaxed text-slate-700";
+// In the wide popup, sections flow into columns so long pages need little or no scrolling.
+const flow =
+  "text-sm leading-relaxed text-slate-700 lg:columns-2 lg:gap-10 2xl:columns-3 [&>*]:mb-5 [&>*]:break-inside-avoid";
 const list = "list-disc space-y-1 pl-5";
 const link = "font-medium text-indigo-600 underline";
 
 export function AboutPage() {
   return (
-    <div className={page}>
+    <div className={flow}>
       <div className="flex items-center gap-4">
         <img src="favicon.svg" alt="" className="h-14 w-14" />
         <div>
@@ -66,7 +69,7 @@ export function HowToUsePage() {
   const gemini = getProvider("gemini");
   return (
     <div className={page}>
-      <ol className="space-y-4">
+      <ol className="grid gap-x-10 gap-y-3 lg:grid-cols-2">
         <Step n={1} title="Get a free AI key">
           Open{" "}
           <a href={gemini.keyUrl} target="_blank" rel="noreferrer" className={link}>
@@ -99,23 +102,25 @@ export function HowToUsePage() {
           Progress saves automatically. Your tracks are listed under <b>Your learning tracks</b> on the home page.
         </Step>
       </ol>
-      <Section title="Install SkillPath as an app">
-        <ul className={list}>
-          <li>
-            <b>Android, Chrome or Edge:</b> menu → <b>Install app</b>, or the install icon in the address bar.
-          </li>
-          <li>
-            <b>iPhone or iPad:</b> open SkillPath in Safari, tap <b>Share</b> → <b>Add to Home Screen</b>.
-          </li>
-        </ul>
-        <p>Installed, it opens in its own window and works offline for the tracks you already have.</p>
-      </Section>
-      <Section title="Keep your progress safe">
-        <p>
-          Your tracks live only on this device. Menu → <b>Back up &amp; restore</b> → <b>Download backup</b> before you
-          clear browser data or move to a new device.
-        </p>
-      </Section>
+      <div className="grid gap-x-10 gap-y-5 lg:grid-cols-2">
+        <Section title="Install SkillPath as an app">
+          <ul className={list}>
+            <li>
+              <b>Android, Chrome or Edge:</b> menu → <b>Install app</b>, or the install icon in the address bar.
+            </li>
+            <li>
+              <b>iPhone or iPad:</b> open SkillPath in Safari, tap <b>Share</b> → <b>Add to Home Screen</b>.
+            </li>
+          </ul>
+          <p>Installed, it opens in its own window and works offline for the tracks you already have.</p>
+        </Section>
+        <Section title="Keep your progress safe">
+          <p>
+            Your tracks live only on this device. Menu → <b>Back up &amp; restore</b> → <b>Download backup</b> before you
+            clear browser data or move to a new device.
+          </p>
+        </Section>
+      </div>
     </div>
   );
 }
@@ -136,7 +141,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 export function DisclaimerPage() {
   return (
-    <div className={page}>
+    <div className={flow}>
       <Section title="AI-generated content">
         <p>
           Lessons, questions, quiz grades, skill levels and suggestions are written by AI. They can be wrong, incomplete
