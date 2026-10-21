@@ -89,6 +89,13 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
   );
 }
 
+/** Main column plus a side column that widens with the screen (side column hidden below lg). */
+export const WITH_SIDE_PANEL =
+  "grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem] 2xl:grid-cols-[minmax(0,1fr)_28rem]";
+
+/** The side column: stays in view while the page scrolls, and scrolls on its own when long. */
+export const SIDE_COLUMN = "hidden space-y-4 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto";
+
 /** A compact card for the side column of wide layouts. */
 export function SidePanel({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
