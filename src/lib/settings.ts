@@ -2,7 +2,7 @@
 // built-in defaults below. Saved choices live on this device only: provider, model
 // and effort in localStorage, API keys encrypted in IndexedDB (secrets.ts). Call
 // initSettings() once at startup to load the keys.
-import { CUSTOM_ID, findProvider, getProvider } from "./ai/providers";
+import { CUSTOM_ID, findProvider, getProvider, isProviderAvailable } from "./ai/providers";
 import type { AIConfig, JsonMode } from "./ai/types";
 import { loadApiKeys, saveApiKeys } from "./secrets";
 
@@ -81,20 +81,26 @@ export function resolveConfig(
     provider,
     providerName: provider.id === CUSTOM_ID && extras.customName ? extras.customName : provider.name,
     apiKey: overrides.apiKey?.trim() ?? "",
-    baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl),
+    baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl, provider),
     model,
     effort,
     jsonMode: provider.id === CUSTOM_ID ? (extras.customJsonMode ?? provider.jsonMode) : provider.jsonMode,
   };
 }
 
-/** Makes a typed API URL usable: adds a missing http(s):// and drops trailing slashes. */
-export function normalizeBaseUrl(raw: string): string {
-  const url = raw.trim().replace(/\/+$/, "");
+/**
+ * Makes a typed API URL usable: adds a missing http(s)://, drops trailing slashes and,
+ * for local servers, adds the /v1 path their OpenAI-compatible API lives under.
+ */
+export function normalizeBaseUrl(raw: string, provider: AIConfig["provider"]): string {
+  let url = raw.trim().replace(/\/+$/, "");
   if (!url) return "";
-  if (/^[a-z][a-z\d+.-]*:\/\//i.test(url)) return url;
-  const localHost = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
-  return `${localHost ? "http" : "https"}://${url}`;
+  if (!/^[a-z][a-z\d+.-]*:\/\//i.test(url)) {
+    const localHost = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
+    url = `${localHost ? "http" : "https"}://${url}`;
+  }
+  if (provider.group === "local" && !/\/v1$/i.test(url)) url += "/v1";
+  return url;
 }
 
 function isWebAddress(value: string): boolean {
@@ -198,7 +204,10 @@ function persistKeys(keys: ApiKeys): Promise<void> {
 }
 
 function resolve(stored: StoredSettings): Settings {
-  const providerId = stored.provider ?? defaultProviderId();
+  // A local AI saved on a device that no longer offers it falls back to the default;
+  // its saved settings are kept for when local AI is available again.
+  const saved = stored.provider && isProviderAvailable(getProvider(stored.provider)) ? stored.provider : undefined;
+  const providerId = saved ?? defaultProviderId();
   const config = resolveConfig(providerId, stored.providers[providerId] ?? {}, stored);
   return { config, problem: setupProblem(config), stored, keysSaved };
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSettings } from "../hooks/useSettings";
 import { listModels } from "../lib/ai";
-import { CUSTOM_ID, getProvider, GROUP_LABEL, GROUP_ORDER, PROVIDERS } from "../lib/ai/providers";
+import { availableProviders, CUSTOM_ID, getProvider, GROUP_LABEL, GROUP_ORDER } from "../lib/ai/providers";
 import type { JsonMode } from "../lib/ai/types";
 import { describeError } from "../lib/learning";
 import {
@@ -66,6 +66,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const suggested = provider.models.map((m) => m.id);
   const modelIds = [...suggested, ...(loadedModels[providerId] ?? []).filter((id) => !suggested.includes(id))];
   const hasSaved = Boolean(stored.provider) || Object.keys(stored.providers).length > 0;
+
+  const sentTo = provider.group === "local" ? "your local server" : provider.name;
 
   // The key saved (encrypted) for this provider, as opposed to one typed here but not saved yet.
   const savedKey = stored.providers[providerId]?.apiKey;
@@ -188,7 +190,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 className={field}
               >
                 {GROUP_ORDER.map((group) => {
-                  const items = PROVIDERS.filter((p) => p.group === group);
+                  const items = availableProviders(group);
+                  if (items.length === 0) return null;
                   return (
                     <optgroup key={group} label={GROUP_LABEL[group]}>
                       {items.map((p) => (
@@ -204,14 +207,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               </select>
               <div className="space-y-1.5 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
                 <p>
-                  <span className="font-medium text-slate-800">{provider.group === "free" ? "Free option: " : "Pricing: "}</span>
+                  <span className="font-medium text-slate-800">{provider.group === "free" ? "Free option: " : provider.group === "local" ? "Local: " : "Pricing: "}</span>
                   {provider.pricing}
                 </p>
                 {provider.notes && <p>{provider.notes}</p>}
                 {provider.keyUrl && (
                   <p>
                     <a href={provider.keyUrl} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 underline">
-                      {provider.keyRequired ? "Get an API key ↗" : "Download ↗"}
+                      {provider.keyRequired ? "Get an API key ↗" : `Download ${provider.name} ↗`}
                     </a>
                   </p>
                 )}
@@ -303,7 +306,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                     placeholder={
                       replacing
                         ? "Paste the new key"
-                        : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : "Only if the service needs one"))
+                        : (provider.keyPlaceholder ?? (provider.keyRequired ? "Paste your key" : provider.group === "local" ? "Not needed for most local servers" : "Only if the service needs one"))
                     }
                     className={`${field} min-w-0 font-mono`}
                   />
@@ -320,8 +323,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               <p className="text-xs text-slate-500">
                 {replacing && "The new key replaces the saved one when you click Save. "}
                 {keysSaved
-                  ? `Encrypted and saved only on this device. Sent only to ${provider.name}.`
-                  : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${provider.name}.`}
+                  ? `Encrypted and saved only on this device. Sent only to ${sentTo}.`
+                  : `This browser blocks secure storage (for example in a private window), so the key is kept only until you close SkillPath. Sent only to ${sentTo}.`}
               </p>
             </div>
 

@@ -2,7 +2,7 @@
 
 A frontend-only web app that works out what a learner already knows about a technical skill, then teaches it at the right level through a two-way conversation. It is a **Progressive Web App (PWA)**: learners can install it on a phone or computer and open saved tracks offline.
 
-It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free tier, low effort) is the default. Learners can switch in the app's **Settings** popup to Anthropic Claude, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai).
+It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free tier, low effort) is the default. Learners can switch in the app's **Settings** popup to Anthropic Claude, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, Cohere, OpenAI, DeepSeek or xAI, or to any **custom** OpenAI-compatible service. Several of these have **free tiers or free credits**; see [Choosing an AI](#choosing-an-ai). On computers, **local AI** (Ollama, LM Studio) can also be switched on; see [Local AI](#local-ai-ollama-lm-studio).
 
 1. **Skill check.** An adaptive conversation of about 6–10 questions (multiple choice, short answer, code, experience). Each question depends on the previous answers: it gets harder after correct ones and easier after wrong ones.
 2. **Skill profile.** Overall level, mastery per sub-topic (0–100), strengths, gaps and misconceptions.
@@ -48,7 +48,7 @@ The first time you open the app (and whenever the chosen AI still needs a key), 
 | Setting | What it does |
 |---|---|
 | **AI provider** | Which service does the teaching. The box underneath shows its free tier or pricing, setup tips, and a **Get an API key ↗** link |
-| **API URL** | Only for **Custom**: where the service lives |
+| **API URL** | Only for **Custom** and local AI: where the service lives |
 | **API key** | Your key for that provider (**Show** reveals what you type). Each provider remembers its own key, encrypted on this device. A saved key shows as **✓ Saved key ending …1234**, never in full, with **Replace** and **Remove**, and is marked **✓ key saved** in the list |
 | **Model** | Type a model id, click one of the suggestion chips, or click **Load models** to fetch the provider's current list |
 | **Effort** | How much the model thinks per request, for models that support it. Lower means fewer tokens |
@@ -123,13 +123,57 @@ Pick **Custom (OpenAI-compatible)** for any service not listed, such as a compan
 
 The service must allow requests from browsers (CORS).
 
-> This version of SkillPath talks to hosted AI services only. There is no support for AI running on your own computer.
+### Local AI (Ollama, LM Studio)
+
+SkillPath can also use an AI running on the learner's own computer: free, no key, and nothing leaves the machine. One switch controls it:
+
+```ts
+// src/lib/features.ts
+export const features = {
+  localAiSupport: false, // true offers Ollama and LM Studio
+};
+```
+
+- **Off (as shipped):** Ollama and LM Studio aren't offered anywhere, and the app works exactly as it does without them.
+- **On:** a **Local: free, runs on your computer** group appears in both AI lists (Settings and the home page) with **Ollama** and **LM Studio**, and **How to use** gets a short "Use a local AI instead" section.
+- **Computers only.** Phones and tablets (iPhone, iPad, Android) never show local AI, even when the switch is on, because they can't run a local AI server. The check is in `src/lib/device.ts`.
+- **Turning it on or off:** change the value, then commit and push. Vercel redeploys the live site.
+- If a learner picked a local AI and it's no longer offered (the switch is off, or they opened the app on a phone), SkillPath uses Gemini instead. Their local AI settings are kept for when it's offered again.
+
+| | Ollama (`ollama`) | LM Studio (`lmstudio`) |
+|---|---|---|
+| **Get it** | [ollama.com/download](https://ollama.com/download) | [lmstudio.ai](https://lmstudio.ai) |
+| **Get a model** | `ollama pull llama3.2` (or any model), and keep Ollama running | Download a model, load it, and start the server in the **Developer** tab |
+| **Allow SkillPath** | Set `OLLAMA_ORIGINS` (below), then restart Ollama | Turn on **Enable CORS** in **Server Settings** |
+| **Default address** | `http://localhost:11434/v1` | `http://localhost:1234/v1` |
+
+Then choose it under **Local** in Settings or on the home page. SkillPath lists the installed models as chips; click one. No key is needed. For a server on another port or computer, type its address in **API URL**: `localhost:11434` is enough, because SkillPath adds `http://` and `/v1`. For usable tutoring, pick a model of 8B parameters or more.
+
+**Allowing the deployed site in Ollama.** Ollama only answers web pages it trusts. Pages on `localhost` (`npm run dev`, `npm run preview`) are trusted already. For the live site, set `OLLAMA_ORIGINS` to its address, then quit Ollama and start it again:
+
+```powershell
+# Windows: then quit Ollama from the taskbar tray and start it again
+setx OLLAMA_ORIGINS "https://skill-path-rosy.vercel.app"
+```
+
+```bash
+# macOS: then quit the Ollama app and start it again
+launchctl setenv OLLAMA_ORIGINS "https://skill-path-rosy.vercel.app"
+
+# Linux: run "sudo systemctl edit ollama", add these two lines, save, then restart
+#   [Service]
+#   Environment="OLLAMA_ORIGINS=https://skill-path-rosy.vercel.app"
+sudo systemctl daemon-reload && sudo systemctl restart ollama
+```
+
+Hosting SkillPath somewhere else? Use that address instead; the **Couldn't reach Ollama** message shows the exact value. Separate several addresses with commas. Chrome may also ask whether the site can access devices on your local network: click **Allow**.
 
 ### Which one should I pick?
 
 - **Best teaching quality:** Claude Opus 5 or Sonnet 5, or OpenAI GPT-5.5.
 - **Free and good:** Google Gemini (`gemini-3.8-flash`) or Groq (`openai/gpt-oss-120b`).
 - **Cheapest paid:** DeepSeek, or Claude Haiku 4.5.
+- **Private, on a computer (when local AI is switched on):** Ollama or LM Studio, with a model of 8B parameters or more.
 
 Smaller free models may sometimes produce shallower assessments. SkillPath checks every structured reply and retries automatically when a model returns the wrong format.
 
@@ -253,6 +297,8 @@ src/
       json.ts              reads JSON out of model replies and validates it
       errors.ts            one error type with learner-friendly messages for every provider
     settings.ts            settings in use: Settings-popup choices on top of the defaults
+    features.ts            feature switches: localAiSupport turns Ollama and LM Studio on or off
+    device.ts              tells phones and tablets apart from computers (local AI is computers only)
     secrets.ts             API keys encrypted with AES-GCM and a non-extractable device key
     backup.ts              download all tracks as JSON, and restore them with validation
     appInfo.ts             version, developer credit and copyright notice
@@ -288,6 +334,7 @@ How it stays reliable across very different AIs:
 - **Teaching style, question count, pass rules.** Edit the prompts in `src/lib/prompts.ts`.
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
+- **Local AI on or off.** `localAiSupport` in `src/lib/features.ts`; see [Local AI](#local-ai-ollama-lm-studio). Phones and tablets never show it.
 - **Default AI.** `DEFAULT_PROVIDER` in `src/lib/settings.ts`. Its model and effort follow from it: that AI's recommended model, and low effort.
 - **Logo and app icons.** `public/favicon.svg` plus the PNG/ICO icons; the icon list and app colours are in `vite.config.ts`.
 - **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
@@ -302,6 +349,9 @@ How it stays reliable across very different AIs:
 | **"… couldn't find the model"** | The model isn't available on that provider. The error opens **Change AI or model**; click **Load models**, pick one and click **Try again** |
 | **"The API URL … returned a web page"** or **"… doesn't point to an AI API"** | A **Custom** provider's URL is wrong. Fix it in the **API URL** field of **Change AI or model**, or switch to a listed provider |
 | **"Couldn't reach …"** | Check your internet connection, proxy or firewall. The service may also be blocking browser requests (CORS) |
+| **"Couldn't reach Ollama …"** or **"… LM Studio …"** | Make sure it's installed and running. If it is, it's blocking this page: set `OLLAMA_ORIGINS` (Ollama) or turn on **Enable CORS** (LM Studio). See [Local AI](#local-ai-ollama-lm-studio) |
+| **"Ollama doesn't have a model called …"** | Click **Load models** and pick an installed model, or download it first with `ollama pull <name>` |
+| No **Local** group in the AI list | Local AI is switched off (`localAiSupport` in `src/lib/features.ts`), or you're on a phone or tablet, where it's never offered |
 | **"… rate limit or free quota was reached"** | Free tiers have per-minute and per-day limits. Wait, or switch to another free provider in Settings |
 | **"… is out of credit"** | Add credit on the provider's site, or switch to a free option |
 | **"… kept replying in an unexpected format"** | That model struggles with structured replies. Pick a larger model, or a provider with JSON schema support (Claude, OpenAI, Gemini, Groq, Mistral) |

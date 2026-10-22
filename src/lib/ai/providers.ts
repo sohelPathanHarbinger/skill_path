@@ -1,6 +1,7 @@
 // The AI services SkillPath can use. Facts checked in September 2026; free tiers
 // and model names change often, so every model field also accepts any id, and
 // Settings can load a provider's live model list.
+import { localAiAvailable } from "../features";
 import type { ProviderDef } from "./types";
 
 const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
@@ -29,12 +30,13 @@ const noEffort = () => null;
 
 export const CUSTOM_ID = "custom";
 
-export const GROUP_ORDER: ProviderDef["group"][] = ["default", "free", "paid", "custom"];
+export const GROUP_ORDER: ProviderDef["group"][] = ["default", "free", "paid", "local", "custom"];
 
 export const GROUP_LABEL: Record<ProviderDef["group"], string> = {
   default: "Default",
   free: "Free tier or free credits",
   paid: "Paid",
+  local: "Local: free, runs on your computer",
   custom: "Custom",
 };
 
@@ -251,6 +253,42 @@ export const PROVIDERS: ProviderDef[] = [
     effortOptions: grokEfforts,
   },
 
+  // --- Local (only when features.localAiSupport is on, and never on phones or tablets) ---
+  {
+    id: "ollama",
+    name: "Ollama",
+    kind: "openai-compatible",
+    group: "local",
+    baseUrl: "http://localhost:11434/v1",
+    editableBaseUrl: true,
+    keyRequired: false,
+    keyUrl: "https://ollama.com/download",
+    pricing: "Free. Runs open models on your own computer; nothing leaves your machine.",
+    notes:
+      "Install Ollama, run \"ollama pull llama3.2\" (or any model) and keep Ollama running, then click Load models. If requests are blocked, allow this site: set the environment variable OLLAMA_ORIGINS to this page's address and restart Ollama.",
+    models: [{ id: "llama3.2", label: "Llama 3.2 (pull it first)" }],
+    defaultModel: "llama3.2",
+    jsonMode: "json_schema",
+    effortOptions: noEffort,
+  },
+  {
+    id: "lmstudio",
+    name: "LM Studio",
+    kind: "openai-compatible",
+    group: "local",
+    baseUrl: "http://localhost:1234/v1",
+    editableBaseUrl: true,
+    keyRequired: false,
+    keyUrl: "https://lmstudio.ai",
+    pricing: "Free. Runs open models on your own computer; nothing leaves your machine.",
+    notes:
+      "In LM Studio, load a model, start the server from the Developer tab and turn on Enable CORS in Server Settings. Then click Load models.",
+    models: [],
+    defaultModel: "",
+    jsonMode: "json_schema",
+    effortOptions: noEffort,
+  },
+
   // --- Custom ---------------------------------------------------------------
   {
     id: CUSTOM_ID,
@@ -261,7 +299,7 @@ export const PROVIDERS: ProviderDef[] = [
     editableBaseUrl: true,
     keyRequired: false,
     pricing:
-      "Any service with an OpenAI-compatible /chat/completions API: a company AI gateway, or a provider not listed here.",
+      "Any service with an OpenAI-compatible /chat/completions API: a company AI gateway, LiteLLM, vLLM, or a provider not listed here.",
     notes:
       "Enter the base URL (the part before /chat/completions), a model id and a key if the service needs one. The service must allow requests from browsers (CORS).",
     models: [],
@@ -277,4 +315,14 @@ export function findProvider(id: string | undefined): ProviderDef | undefined {
 
 export function getProvider(id: string): ProviderDef {
   return findProvider(id) ?? PROVIDERS[0];
+}
+
+/** Whether a provider is offered on this device: local AIs only when local AI is available. */
+export function isProviderAvailable(provider: ProviderDef): boolean {
+  return provider.group !== "local" || localAiAvailable();
+}
+
+/** The providers to list in a group, leaving out any not offered on this device. */
+export function availableProviders(group: ProviderDef["group"]): ProviderDef[] {
+  return PROVIDERS.filter((p) => p.group === group && isProviderAvailable(p));
 }

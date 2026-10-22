@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getProvider } from "../lib/ai/providers";
 import { APP_VERSION, COPYRIGHT, DEVELOPER } from "../lib/appInfo";
+import { localAiAvailable } from "../lib/features";
 
 // The About, How to use and Disclaimer pages opened from the menu.
 
@@ -53,6 +54,13 @@ export function AboutPage() {
         <p>
           Google Gemini by default, which has a free tier. You can switch to Claude, OpenAI, Groq and many others in{" "}
           <span className="font-medium">AI settings</span>.
+          {localAiAvailable() && (
+            <>
+              {" "}
+              On this computer you can also use a <b>local AI</b> (Ollama or LM Studio), which runs entirely on your
+              machine.
+            </>
+          )}
         </p>
       </Section>
       <Section title="Credits">
@@ -114,6 +122,19 @@ export function HowToUsePage() {
           </ul>
           <p>Installed, it opens in its own window and works offline for the tracks you already have.</p>
         </Section>
+        {localAiAvailable() && (
+          <Section title="Use a local AI instead">
+            <p>
+              Install{" "}
+              <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className={link}>
+                Ollama ↗
+              </a>{" "}
+              or LM Studio, download a model (for example <code className="text-xs">ollama pull llama3.2</code>) and keep it
+              running. In <b>AI settings</b> choose it under <b>Local</b>: no key needed, and nothing leaves your computer. If
+              it can't connect, follow the setup tip shown there.
+            </p>
+          </Section>
+        )}
         <Section title="Keep your progress safe">
           <p>
             Your tracks live only on this device. Menu → <b>Back up &amp; restore</b> → <b>Download backup</b> before you
@@ -162,6 +183,7 @@ export function DisclaimerPage() {
           provider you choose in AI settings. That provider's terms and privacy policy apply. Free tiers, including
           Google Gemini's, may use what you send to improve their products. Don't enter personal, confidential or
           work-sensitive information.
+          {localAiAvailable() && " With a local AI (Ollama, LM Studio), your text stays on this computer."}
         </p>
       </Section>
       <Section title="Your API key">
