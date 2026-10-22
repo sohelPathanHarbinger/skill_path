@@ -2,9 +2,9 @@ import { useEffect, useId, useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import { openSettingsDialog } from "../hooks/useSettingsDialog";
 import { listModels } from "../lib/ai";
-import { GROUP_LABEL, GROUP_ORDER, PROVIDERS } from "../lib/ai/providers";
+import { availableProviders, GROUP_LABEL, GROUP_ORDER } from "../lib/ai/providers";
 import { describeError } from "../lib/learning";
-import { getSettings, updateSettings, type ProviderOverrides } from "../lib/settings";
+import { getSettings, keyMark, updateSettings, type ProviderOverrides } from "../lib/settings";
 import { Button } from "./ui";
 
 const field =
@@ -52,7 +52,7 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
       setLoadedModels((prev) => ({ ...prev, [current.provider.id]: found }));
       if (!found.length) {
         setStatus(
-          `${current.providerName} has no models yet.${current.provider.id === "ollama" ? ' Download one first, e.g. "ollama pull llama3.1".' : ""}`,
+          `${current.providerName} has no models yet.${current.provider.id === "ollama" ? ' Download one first, e.g. "ollama pull llama3.2".' : ""}`,
         );
       }
     } catch (err) {
@@ -117,15 +117,20 @@ export function AIQuickSwitch({ autoLoadModels = false }: { autoLoadModels?: boo
             AI provider
           </label>
           <select id={ids.provider} value={provider.id} onChange={(e) => chooseProvider(e.target.value)} className={field}>
-            {GROUP_ORDER.map((group) => (
-              <optgroup key={group} label={GROUP_LABEL[group]}>
-                {PROVIDERS.filter((p) => p.group === group).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
+            {GROUP_ORDER.map((group) => {
+              const items = availableProviders(group);
+              if (items.length === 0) return null;
+              return (
+                <optgroup key={group} label={GROUP_LABEL[group]}>
+                  {items.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {keyMark(stored, p.id)}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
         </div>
         <div className="space-y-1.5">

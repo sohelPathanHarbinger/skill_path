@@ -47,12 +47,7 @@ async function sendTo(config: AIConfig, url: string, init: RequestInit): Promise
     });
   } catch (err) {
     if (init.signal?.aborted) throw err;
-    throw new AIError(
-      "network",
-      config.provider.group === "local"
-        ? `Couldn't reach ${config.providerName} at ${config.baseUrl}. Is ${config.providerName} installed and running? If it is, it may be blocking requests from this page (CORS): see its setup tips.`
-        : `Couldn't reach ${config.providerName}. Check your internet connection. If it keeps failing, the service may be blocking requests from browsers (CORS).`,
-    );
+    throw new AIError("network", unreachable(config));
   }
   // A web page instead of JSON: the URL points at a website (often this app itself), not an AI API.
   if ((response.headers.get("content-type") ?? "").includes("text/html")) {
@@ -62,11 +57,46 @@ async function sendTo(config: AIConfig, url: string, init: RequestInit): Promise
   return response;
 }
 
+/** The fetch itself failed: no server, no connection, or the browser blocked it (CORS). */
+function unreachable(config: AIConfig): string {
+  const name = config.providerName;
+  if (config.provider.group !== "local") {
+    return `Couldn't reach ${name} at ${config.baseUrl}. Check your internet connection and the API URL. If it keeps failing, the service may be blocking requests from browsers (CORS).`;
+  }
+  const allow =
+    config.provider.id === "ollama"
+      ? ` set the environment variable OLLAMA_ORIGINS=${window.location.origin} and restart Ollama`
+      : config.provider.id === "lmstudio"
+        ? " turn on Enable CORS in LM Studio's Server Settings"
+        : " allow this page's address in the server's CORS settings";
+  return `Couldn't reach ${name} at ${config.baseUrl}. Is ${name} installed and running? If it is, it may be blocking requests from this page: to allow them,${allow}.`;
+}
+
+/** The model isn't there. Local servers only have the models you've downloaded. */
+function modelNotFound(config: AIConfig, detail: string): AIError {
+  const name = config.providerName;
+  if (config.provider.group !== "local") {
+    return new AIError("not_found", `${name} couldn't find the model "${config.model}". Pick another model in Settings (try Load models).`, detail);
+  }
+  // Local model names are lowercase without spaces ("llama3.1"), so suggest that spelling.
+  const guess = config.model.toLowerCase().replace(/\s+/g, "");
+  const hint = guess !== config.model ? ` Model names are lowercase without spaces, e.g. "${guess}".` : "";
+  const pull = config.provider.id === "ollama" ? `, or download it first with "ollama pull ${guess}"` : "";
+  return new AIError(
+    "not_found",
+    `${name} doesn't have a model called "${config.model}".${hint} Choose one of your installed models (Load models)${pull}.`,
+    detail,
+  );
+}
+
 async function errorFromResponse(config: AIConfig, response: Response): Promise<AIError> {
   let detail = "";
   let jsonBody = false;
   try {
-    const body = (await response.clone().json()) as { error?: { message?: string } | string; message?: string; detail?: string } | null;
+    type ErrorBody = { error?: { message?: string } | string; message?: string; detail?: string } | null;
+    const raw = (await response.clone().json()) as ErrorBody | ErrorBody[];
+    // Gemini wraps its error in a one-item array.
+    const body = Array.isArray(raw) ? (raw[0] ?? null) : raw;
     jsonBody = body !== null && typeof body === "object";
     detail = (typeof body?.error === "string" ? body.error : body?.error?.message) ?? body?.message ?? body?.detail ?? "";
   } catch {
@@ -98,22 +128,6 @@ async function errorFromResponse(config: AIConfig, response: Response): Promise<
     return new AIError("auth", `${name} rejected the API key. Check it in Settings.${suffix}`, detail);
   }
   return new AIError("bad_request", `${name} rejected the request: ${detail || response.statusText || response.status}`, detail);
-}
-
-function modelNotFound(config: AIConfig, detail: string): AIError {
-  const name = config.providerName;
-  if (config.provider.group !== "local") {
-    return new AIError("not_found", `${name} couldn't find the model "${config.model}". Pick another model in Settings (try Load models).`, detail);
-  }
-  // Local model names are lowercase without spaces ("llama3.1"), so suggest that spelling.
-  const guess = config.model.toLowerCase().replace(/\s+/g, "");
-  const hint = guess !== config.model ? ` Model names are lowercase without spaces, e.g. "${guess}".` : "";
-  const pull = config.provider.id === "ollama" ? `, or download it first with "ollama pull ${guess}"` : "";
-  return new AIError(
-    "not_found",
-    `${name} doesn't have a model called "${config.model}".${hint} Choose one of your installed models (Load models)${pull}.`,
-    detail,
-  );
 }
 
 /** The simpler request to try after a rejection, or null when there's nothing left to simplify. */

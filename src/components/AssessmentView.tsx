@@ -5,7 +5,7 @@ import { clearTrackDraft } from "../lib/trackDraft";
 import type { AssessmentExchange, Track, UpdateTrack } from "../lib/types";
 import { AIErrorPanel } from "./AIErrorPanel";
 import { Markdown } from "./Markdown";
-import { Badge, Bar, Button, Card, difficultyTone, Spinner } from "./ui";
+import { BackLink, Badge, Bar, Button, Card, difficultyTone, SIDE_COLUMN, SidePanel, Spinner, WITH_SIDE_PANEL } from "./ui";
 
 /** Hard stop in case the assessor never marks the assessment complete. */
 const MAX_QUESTIONS = 12;
@@ -64,53 +64,132 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-3">
-        <a href="#/" className="text-sm text-slate-500 hover:text-slate-800">
-          ← All tracks
-        </a>
-        <div>
-          <p className="text-sm font-medium text-indigo-600">Skill check</p>
-          <h1 className="text-2xl font-semibold tracking-tight">{track.skill}</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            A few questions so everything is pitched at the right level. Answer honestly: "I don't know" is a perfectly
-            good answer.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Bar value={complete ? 100 : Math.min(95, (questionCount / EXPECTED_QUESTIONS) * 100)} />
-          <span className="shrink-0 text-xs text-slate-500">
-            {complete ? "Done" : `Question ${Math.max(questionCount, 1)}`}
-          </span>
-        </div>
-      </header>
+    // Questions fill the width; on wide screens a side column shows the topics covered
+    // so far, what the learner told us, and tips.
+    <div className={WITH_SIDE_PANEL}>
+      <div className="min-w-0 space-y-6">
+        <header className="space-y-3">
+          <BackLink href="#/">All tracks</BackLink>
+          <div>
+            <p className="text-sm font-medium text-indigo-600">Skill check</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{track.skill}</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              A few questions so everything is pitched at the right level. Answer honestly: "I don't know" is a perfectly
+              good answer.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Bar value={complete ? 100 : Math.min(95, (questionCount / EXPECTED_QUESTIONS) * 100)} />
+            <span className="shrink-0 text-xs text-slate-500">
+              {complete ? "Done" : `Question ${Math.max(questionCount, 1)}`}
+            </span>
+          </div>
+        </header>
 
-      <div className="space-y-5">
-        {exchanges.map((exchange, i) => (
-          <ExchangeView key={i} exchange={exchange} number={i + 1} />
-        ))}
+        <div className="space-y-5">
+          {exchanges.map((exchange, i) => (
+            <ExchangeView key={i} exchange={exchange} number={i + 1} />
+          ))}
+        </div>
+
+        {loading && (
+          <Spinner label={exchanges.length === 0 ? "Preparing your first question…" : "Looking at your answer…"} />
+        )}
+        {error !== null && (
+          <AIErrorPanel error={error} onRetry={needsNextTurn ? () => fetchNextTurn(track) : undefined} />
+        )}
+
+        {last && awaitingAnswer && !loading && (
+          <AnswerBox key={exchanges.length} turn={last.turn} onSubmit={submitAnswer} />
+        )}
+
+        {complete && !loading && (
+          <Card className="flex flex-wrap items-center justify-between gap-4 bg-indigo-50 ring-indigo-200">
+            <p className="text-sm text-indigo-900">That's everything I need. Let's see where you stand.</p>
+            <Button onClick={() => update((t) => ({ ...t, stage: "building" }))}>See my skill profile →</Button>
+          </Card>
+        )}
+
+        <div ref={bottomRef} />
       </div>
 
-      {loading && (
-        <Spinner label={exchanges.length === 0 ? "Preparing your first question…" : "Looking at your answer…"} />
-      )}
-      {error !== null && (
-        <AIErrorPanel error={error} onRetry={needsNextTurn ? () => fetchNextTurn(track) : undefined} />
-      )}
-
-      {last && awaitingAnswer && !loading && (
-        <AnswerBox key={exchanges.length} turn={last.turn} onSubmit={submitAnswer} />
-      )}
-
-      {complete && !loading && (
-        <Card className="flex flex-wrap items-center justify-between gap-4 bg-indigo-50 ring-indigo-200">
-          <p className="text-sm text-indigo-900">That's everything I need. Let's see where you stand.</p>
-          <Button onClick={() => update((t) => ({ ...t, stage: "building" }))}>See my skill profile →</Button>
-        </Card>
-      )}
-
-      <div ref={bottomRef} />
+      <aside className={SIDE_COLUMN}>
+        <SkillCheckSummary track={track} loading={loading} />
+        <SidePanel title="Tips">
+          <ul className="list-disc space-y-1.5 pl-4 text-sm text-slate-600">
+            <li>
+              <b>I don't know</b> is a useful answer, not a failure.
+            </li>
+            <li>Don't look things up: your plan is built on what you really know.</li>
+            <li>
+              Press <kbd className="rounded bg-slate-100 px-1 text-xs">Ctrl + Enter</kbd> to submit a written answer.
+            </li>
+          </ul>
+        </SidePanel>
+      </aside>
     </div>
+  );
+}
+
+/** Topics asked so far and what the learner told us (also shown while the plan is built). */
+export function SkillCheckSummary({ track, loading }: { track: Track; loading: boolean }) {
+  return (
+    <>
+      <TopicsPanel exchanges={track.assessment} loading={loading} />
+      <SidePanel title="What you told us">
+        <dl className="space-y-2 text-sm">
+          <InfoRow label="Skill" value={track.skill} />
+          <InfoRow label="Goal" value={track.goal} />
+          <InfoRow label="Experience so far" value={track.background} />
+        </dl>
+      </SidePanel>
+    </>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt className="text-xs font-medium text-slate-500">{label}</dt>
+      <dd className="text-slate-800">{value}</dd>
+    </div>
+  );
+}
+
+/** Each question asked so far, with how the answer was judged once the next turn arrives. */
+function TopicsPanel({ exchanges, loading }: { exchanges: AssessmentExchange[]; loading: boolean }) {
+  // The closing turn, if any, is always last, so indexes line up with `exchanges`.
+  const asked = exchanges.filter((ex) => !ex.turn.is_complete);
+  if (asked.length === 0) return null;
+  return (
+    <SidePanel title="Topics so far" aside={`${asked.length} asked`}>
+      <ol className="space-y-2">
+        {asked.map((ex, i) => {
+          const verdict = exchanges[i + 1]?.turn.previous_answer_quality;
+          const quality = verdict ? QUALITY[verdict] : null;
+          return (
+            <li key={i} className="flex items-start gap-2.5 text-sm">
+              {ex.answer === null ? (
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-indigo-600 text-[10px] font-semibold text-white">
+                  {i + 1}
+                </span>
+              ) : quality ? (
+                <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs ${quality.className}`}>
+                  {quality.icon}
+                </span>
+              ) : (
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-slate-100 text-xs text-slate-500">
+                  {loading ? "…" : i + 1}
+                </span>
+              )}
+              <span className="min-w-0 flex-1 text-slate-700">{ex.turn.question_topic}</span>
+              <Badge tone={difficultyTone(ex.turn.question_difficulty)}>{ex.turn.question_difficulty}</Badge>
+            </li>
+          );
+        })}
+      </ol>
+    </SidePanel>
   );
 }
 

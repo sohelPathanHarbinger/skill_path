@@ -4,7 +4,7 @@ import type { SkillProfile } from "../lib/schemas";
 import { removeTrack } from "../lib/trackStore";
 import type { ModuleStatus, Plan, PlanModule, Track, UpdateTrack } from "../lib/types";
 import { ResourcesPanel } from "./ResourcesPanel";
-import { Badge, Bar, Button, Card, difficultyTone, MasteryBar } from "./ui";
+import { BackLink, Badge, Bar, Button, Card, difficultyTone, MasteryBar } from "./ui";
 
 export function Dashboard({ track, update }: { track: Track; update: UpdateTrack }) {
   const { profile, plan } = track;
@@ -47,10 +47,8 @@ export function Dashboard({ track, update }: { track: Track; update: UpdateTrack
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <a href="#/" className="text-sm text-slate-500 hover:text-slate-800">
-            ← All tracks
-          </a>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">{track.skill}</h1>
+          <BackLink href="#/">All tracks</BackLink>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight">{track.skill}</h1>
           {track.goal && <p className="mt-1 text-slate-600">Goal: {track.goal}</p>}
         </div>
         {nextModule ? (
@@ -62,7 +60,7 @@ export function Dashboard({ track, update }: { track: Track; update: UpdateTrack
         )}
       </header>
 
-      <div className="grid items-start gap-6 lg:grid-cols-5">
+      <div className="grid items-start gap-6 lg:grid-cols-5 xl:gap-8">
         <div className="lg:col-span-2">
           <ProfilePanel profile={profile} />
         </div>
@@ -196,7 +194,7 @@ function PlanPanel({
   );
 }
 
-function StatusDot({ status, index }: { status: ModuleStatus; index: number }) {
+export function StatusDot({ status, index }: { status: ModuleStatus; index: number }) {
   if (status === "completed") {
     return (
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-500 text-sm text-white">✓</span>

@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "react";
+import { getSettings } from "../lib/settings";
 
 // Whether the Settings popup is open, shared so any screen can open it.
-// It opens by itself once per browser tab, when the app starts.
+// At startup it opens by itself only when the chosen AI isn't ready (usually a
+// missing API key), and then at most once per browser tab.
 const PROMPTED_KEY = "skillpath.settingsPrompted";
 
 function promptedBefore(): boolean {
@@ -12,7 +14,7 @@ function promptedBefore(): boolean {
   }
 }
 
-let open = !promptedBefore();
+let open = false;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -39,6 +41,11 @@ export function closeSettingsDialog(): void {
   }
   open = false;
   emit();
+}
+
+/** Call once the saved keys have loaded: opens Settings if the chosen AI still needs something. */
+export function openSettingsIfNeeded(): void {
+  if (getSettings().problem && !promptedBefore()) openSettingsDialog();
 }
 
 export function useSettingsDialogOpen(): boolean {

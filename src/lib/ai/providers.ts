@@ -1,6 +1,7 @@
 // The AI services SkillPath can use. Facts checked in September 2026; free tiers
 // and model names change often, so every model field also accepts any id, and
 // Settings can load a provider's live model list.
+import { localAiAvailable } from "../features";
 import type { ProviderDef } from "./types";
 
 const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
@@ -252,7 +253,7 @@ export const PROVIDERS: ProviderDef[] = [
     effortOptions: grokEfforts,
   },
 
-  // --- Local ----------------------------------------------------------------
+  // --- Local (only when features.localAiSupport is on, and never on phones or tablets) ---
   {
     id: "ollama",
     name: "Ollama",
@@ -264,7 +265,7 @@ export const PROVIDERS: ProviderDef[] = [
     keyUrl: "https://ollama.com/download",
     pricing: "Free. Runs open models on your own computer; nothing leaves your machine.",
     notes:
-      "Install Ollama, run \"ollama pull llama3.2\" (or any model) and keep Ollama running, then click Load models. If requests are blocked, set the environment variable OLLAMA_ORIGINS=http://localhost:5173 and restart Ollama.",
+      "Install Ollama, run \"ollama pull llama3.2\" (or any model) and keep Ollama running, then click Load models. If requests are blocked, allow this site: set the environment variable OLLAMA_ORIGINS to this page's address and restart Ollama.",
     models: [{ id: "llama3.2", label: "Llama 3.2 (pull it first)" }],
     defaultModel: "llama3.2",
     jsonMode: "json_schema",
@@ -314,4 +315,14 @@ export function findProvider(id: string | undefined): ProviderDef | undefined {
 
 export function getProvider(id: string): ProviderDef {
   return findProvider(id) ?? PROVIDERS[0];
+}
+
+/** Whether a provider is offered on this device: local AIs only when local AI is available. */
+export function isProviderAvailable(provider: ProviderDef): boolean {
+  return provider.group !== "local" || localAiAvailable();
+}
+
+/** The providers to list in a group, leaving out any not offered on this device. */
+export function availableProviders(group: ProviderDef["group"]): ProviderDef[] {
+  return PROVIDERS.filter((p) => p.group === group && isProviderAvailable(p));
 }

@@ -1,10 +1,21 @@
 // In-memory cache over storage.ts so every screen showing the same track sees
 // the same, latest copy, even while a slow Claude call finishes in the background.
-import { deleteTrackRecord, getTrackRecord, listTrackRecords, putTrackRecord } from "./storage";
+import {
+  deleteTrackRecord,
+  getTrackRecord,
+  listTrackRecords,
+  putTrackRecord,
+  requestPersistentStorage,
+} from "./storage";
 import type { Track } from "./types";
 
 const cache = new Map<string, Track>();
 const listeners = new Map<string, Set<(track: Track) => void>>();
+const listListeners = new Set<() => void>();
+
+function listChanged(): void {
+  listListeners.forEach((listener) => listener());
+}
 
 export function cachedTrack(id: string): Track | undefined {
   return cache.get(id);
@@ -38,7 +49,17 @@ export async function createTrack(input: { skill: string; goal: string; backgrou
   };
   cache.set(track.id, track);
   await putTrackRecord(track);
+  listChanged();
+  void requestPersistentStorage();
   return track;
+}
+
+/** Saves a whole track as it is, e.g. one restored from a backup. */
+export async function putTrack(track: Track): Promise<void> {
+  cache.set(track.id, track);
+  listeners.get(track.id)?.forEach((listener) => listener(track));
+  await putTrackRecord(track);
+  listChanged();
 }
 
 export async function updateTrack(id: string, mutate: (track: Track) => Track): Promise<void> {
@@ -53,6 +74,15 @@ export async function updateTrack(id: string, mutate: (track: Track) => Track): 
 export async function removeTrack(id: string): Promise<void> {
   cache.delete(id);
   await deleteTrackRecord(id);
+  listChanged();
+}
+
+/** Called whenever a track is added, restored or deleted. */
+export function subscribeTrackList(listener: () => void): () => void {
+  listListeners.add(listener);
+  return () => {
+    listListeners.delete(listener);
+  };
 }
 
 export function subscribeTrack(id: string, listener: (track: Track) => void): () => void {

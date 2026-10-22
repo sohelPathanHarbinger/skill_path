@@ -1,8 +1,10 @@
 // The AI settings in use: choices saved from the Settings popup override the
-// defaults from .env.local (config.ts). Saved choices live in this browser only.
-import { ENV_CUSTOM_BASE_URL, ENV_EFFORT, ENV_KEYS, ENV_MODEL, ENV_PROVIDER } from "../config";
-import { CUSTOM_ID, findProvider, getProvider } from "./ai/providers";
+// built-in defaults below. Saved choices live on this device only: provider, model
+// and effort in localStorage, API keys encrypted in IndexedDB (secrets.ts). Call
+// initSettings() once at startup to load the keys.
+import { CUSTOM_ID, findProvider, getProvider, isProviderAvailable } from "./ai/providers";
 import type { AIConfig, JsonMode } from "./ai/types";
+import { loadApiKeys, saveApiKeys } from "./secrets";
 
 /** What the learner saved for one provider. Empty fields fall back to the defaults. */
 export interface ProviderOverrides {
@@ -24,35 +26,40 @@ export interface Settings {
   /** Why requests can't be made yet (missing key, model or URL), or null when ready. */
   problem: string | null;
   stored: StoredSettings;
+  /** False when this browser can't keep API keys between visits (e.g. some private windows). */
+  keysSaved: boolean;
 }
+
+type ApiKeys = Record<string, string>;
 
 const STORAGE_KEY = "skillpath.settings.v2";
 const LEGACY_KEY = "skillpath.settings";
 const JSON_MODES: JsonMode[] = ["json_schema", "json_object", "prompt"];
 const listeners = new Set<() => void>();
 
+/** The AI used until the learner picks another one in Settings. */
+const DEFAULT_PROVIDER = "gemini";
+
 export function defaultProviderId(): string {
-  return findProvider(ENV_PROVIDER)?.id ?? "anthropic";
+  return findProvider(DEFAULT_PROVIDER)?.id ?? CUSTOM_ID;
 }
 
 /** Effort to use when the learner hasn't picked one. "low" keeps token use down. */
 function defaultEffort(providerId: string, model: string): string | undefined {
   const options = getProvider(providerId).effortOptions(model);
-  if (!options) return undefined;
-  const preferred = providerId === defaultProviderId() ? ENV_EFFORT : undefined;
-  if (preferred && options.includes(preferred)) return preferred;
-  if (providerId === CUSTOM_ID) return undefined;
+  if (!options || providerId === CUSTOM_ID) return undefined;
   return options.includes("low") ? "low" : undefined;
 }
 
-/** The values a provider uses when nothing is saved for it. */
-export function providerDefaults(providerId: string): { apiKey: string; model: string; baseUrl: string } {
+/** The model and URL a provider uses when nothing is saved for it. */
+export function providerDefaults(providerId: string): { model: string; baseUrl: string } {
   const provider = getProvider(providerId);
-  return {
-    apiKey: ENV_KEYS[provider.id]?.trim() ?? "",
-    model: (provider.id === defaultProviderId() && ENV_MODEL) || provider.defaultModel,
-    baseUrl: provider.id === CUSTOM_ID ? ENV_CUSTOM_BASE_URL : provider.baseUrl,
-  };
+  return { model: provider.defaultModel, baseUrl: provider.baseUrl };
+}
+
+/** Shown after a provider's name in the AI lists, so providers that already have a saved key stand out. */
+export function keyMark(stored: StoredSettings, providerId: string): string {
+  return stored.providers[providerId]?.apiKey ? " · ✓ key saved" : "";
 }
 
 export function resolveConfig(
@@ -73,7 +80,7 @@ export function resolveConfig(
   return {
     provider,
     providerName: provider.id === CUSTOM_ID && extras.customName ? extras.customName : provider.name,
-    apiKey: overrides.apiKey?.trim() || defaults.apiKey,
+    apiKey: overrides.apiKey?.trim() ?? "",
     baseUrl: normalizeBaseUrl((provider.editableBaseUrl && overrides.baseUrl?.trim()) || defaults.baseUrl, provider),
     model,
     effort,
@@ -89,8 +96,8 @@ export function normalizeBaseUrl(raw: string, provider: AIConfig["provider"]): s
   let url = raw.trim().replace(/\/+$/, "");
   if (!url) return "";
   if (!/^[a-z][a-z\d+.-]*:\/\//i.test(url)) {
-    const local = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
-    url = `${local ? "http" : "https"}://${url}`;
+    const localHost = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.)/i.test(url);
+    url = `${localHost ? "http" : "https"}://${url}`;
   }
   if (provider.group === "local" && !/\/v1$/i.test(url)) url += "/v1";
   return url;
@@ -137,6 +144,7 @@ function cleanStored(raw: unknown): StoredSettings {
   };
 }
 
+/** What's saved in localStorage. Earlier versions kept API keys here in plain text. */
 function readStored(): StoredSettings {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -150,10 +158,58 @@ function readStored(): StoredSettings {
   return { providers: {} };
 }
 
+/** Saves everything except the API keys, which never go into localStorage. */
+function writeStored(stored: StoredSettings): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(withKeys(stored, {})));
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    // Storage unavailable: the settings still apply until the tab is closed.
+  }
+}
+
+function keysOf(stored: StoredSettings): ApiKeys {
+  const keys: ApiKeys = {};
+  for (const [id, overrides] of Object.entries(stored.providers)) {
+    if (overrides.apiKey) keys[id] = overrides.apiKey;
+  }
+  return keys;
+}
+
+/** The settings with exactly these API keys. */
+function withKeys(stored: StoredSettings, keys: ApiKeys): StoredSettings {
+  const providers: Record<string, ProviderOverrides> = {};
+  for (const id of new Set([...Object.keys(stored.providers), ...Object.keys(keys)])) {
+    providers[id] = { ...stored.providers[id], apiKey: keys[id] };
+  }
+  return cleanStored({ ...stored, providers });
+}
+
+let keysSaved = true;
+let keyWrites: Promise<void> = Promise.resolve();
+
+/** Encrypts and saves the keys, one write at a time so the latest change wins. */
+function persistKeys(keys: ApiKeys): Promise<void> {
+  keyWrites = keyWrites.then(async () => {
+    if (!keysSaved) return;
+    try {
+      await saveApiKeys(keys);
+    } catch {
+      // Keys stay in memory for this session; Settings tells the learner.
+      keysSaved = false;
+      apply(current.stored);
+    }
+  });
+  return keyWrites;
+}
+
 function resolve(stored: StoredSettings): Settings {
-  const providerId = stored.provider ?? defaultProviderId();
+  // A local AI saved on a device that no longer offers it falls back to the default;
+  // its saved settings are kept for when local AI is available again.
+  const saved = stored.provider && isProviderAvailable(getProvider(stored.provider)) ? stored.provider : undefined;
+  const providerId = saved ?? defaultProviderId();
   const config = resolveConfig(providerId, stored.providers[providerId] ?? {}, stored);
-  return { config, problem: setupProblem(config), stored };
+  return { config, problem: setupProblem(config), stored, keysSaved };
 }
 
 let current = resolve(readStored());
@@ -163,19 +219,37 @@ function apply(stored: StoredSettings): void {
   listeners.forEach((listener) => listener());
 }
 
+/**
+ * Loads the encrypted API keys. Call once at startup, before the first AI request.
+ * Keys that an earlier version saved in plain text are encrypted, then removed from
+ * localStorage.
+ */
+export async function initSettings(): Promise<void> {
+  const stored = readStored();
+  const plainKeys = keysOf(stored);
+  let savedKeys: ApiKeys = {};
+  try {
+    savedKeys = await loadApiKeys();
+  } catch {
+    keysSaved = false;
+  }
+  const keys = { ...plainKeys, ...savedKeys };
+  apply(withKeys(stored, keys));
+  if (keysSaved && Object.keys(plainKeys).length > 0) {
+    await persistKeys(keys);
+    if (keysSaved) writeStored(stored);
+  }
+}
+
 export function getSettings(): Settings {
   return current;
 }
 
 export function saveSettings(stored: StoredSettings): void {
   const cleaned = cleanStored(stored);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
-    localStorage.removeItem(LEGACY_KEY);
-  } catch {
-    // Storage unavailable: the settings still apply until the tab is closed.
-  }
+  writeStored(cleaned);
   apply(cleaned);
+  void persistKeys(keysOf(cleaned));
 }
 
 /** Saves one change on top of the current settings (used by the quick AI switcher). */
@@ -183,6 +257,7 @@ export function updateSettings(mutate: (stored: StoredSettings) => StoredSetting
   saveSettings(mutate(current.stored));
 }
 
+/** Forgets every saved choice and API key. */
 export function clearSettings(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -191,6 +266,7 @@ export function clearSettings(): void {
     // nothing stored
   }
   apply({ providers: {} });
+  void persistKeys({});
 }
 
 export function subscribeSettings(listener: () => void): () => void {
