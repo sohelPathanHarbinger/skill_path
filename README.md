@@ -70,6 +70,15 @@ npm run preview   # serves the built app at http://localhost:4173
 3. No environment variables are needed: learners enter their own key in the app.
 4. Deploy. Every push to `main` redeploys, and other branches get their own preview URL.
 
+### 5. GitHub Pages (this branch)
+
+This branch is also published to **https://sohelpathanharbinger.github.io/skill_path/** by `.github/workflows/deploy-pages.yml`, on every push to `CloudeAI`. One-time setup in the repository's **Settings**:
+
+1. **Pages → Build and deployment → Source:** choose **GitHub Actions**.
+2. **Environments → github-pages → Deployment branches and tags:** add `CloudeAI` (by default only the default branch may deploy).
+
+The build runs `npm run build -- --base=/skill_path/`, because Pages serves the site from the repository's folder.
+
 
 ---
 
