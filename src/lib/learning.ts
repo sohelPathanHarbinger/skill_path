@@ -10,6 +10,7 @@ import {
   QUIZ_WRITER_SYSTEM,
   RESOURCES_SYSTEM,
   TUTOR_SYSTEM,
+  TUTOR_VOICE_NOTE,
   assessmentTranscript,
   learnerIntro,
   moduleBlock,
@@ -109,10 +110,12 @@ export function streamTutorReply(options: {
   /** Called with the full reply text so far, each time more arrives. */
   onText: (text: string) => void;
   signal: AbortSignal;
+  /** The reply will be read aloud: ask for one that works by ear. */
+  voice?: boolean;
 }): Promise<string> {
-  const { track, module, history, onText, signal } = options;
+  const { track, module, history, onText, signal, voice } = options;
   return aiStream({
-    system: TUTOR_SYSTEM,
+    system: voice ? `${TUTOR_SYSTEM}\n\n${TUTOR_VOICE_NOTE}` : TUTOR_SYSTEM,
     context: learnerContext(track, module),
     messages: history.map((m) => ({ role: m.role, content: m.text })),
     onText,

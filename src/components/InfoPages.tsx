@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { getProvider } from "../lib/ai/providers";
 import { APP_VERSION, COPYRIGHT, DEVELOPER } from "../lib/appInfo";
 import { localAiAvailable } from "../lib/features";
+import { voiceAvailable } from "../lib/voice";
+import { canListen } from "../lib/voice/listen";
 
 // The About, How to use and Disclaimer pages opened from the menu.
 
@@ -41,6 +43,7 @@ export function AboutPage() {
           <li>A skill profile with your strengths, gaps and misconceptions</li>
           <li>A learning plan that skips what you already know</li>
           <li>Two-way lessons with an AI tutor you can question at any time</li>
+          {voiceAvailable() && <li>Voice: talk to your tutor and hear its replies, with the text on screen</li>}
           <li>Quizzes with feedback, and suggested courses and materials</li>
         </ul>
       </Section>
@@ -122,6 +125,34 @@ export function HowToUsePage() {
           </ul>
           <p>Installed, it opens in its own window and works offline for the tracks you already have.</p>
         </Section>
+        {voiceAvailable() && (
+          <Section title="Talk instead of typing">
+            <ul className={list}>
+              <li>
+                In a lesson, click <b>Start with voice</b>
+                {canListen() ? (
+                  <>
+                    , then tap the <b>mic</b> next to Send and speak. Pause when you're done and your message is sent.
+                  </>
+                ) : (
+                  " to hear the tutor's replies. This browser can't recognise speech, so type your answers."
+                )}
+              </li>
+              <li>
+                Replies to spoken messages are read aloud. <b>Read replies aloud</b> reads them even when you type, and{" "}
+                <b>Hands-free</b> listens for your answer after each reply, so you don't need to tap.
+              </li>
+              <li>
+                <b>Listen</b> reads any reply or question again. In the skill check and quizzes, <b>Speak answer</b> fills
+                in a written answer.
+              </li>
+              <li>
+                Menu → <b>Voice settings</b> sets your language, the tutor's voice and its speed. Free, no key, and it
+                works with any AI. Talking works in Chrome, Edge and Safari.
+              </li>
+            </ul>
+          </Section>
+        )}
         {localAiAvailable() && (
           <Section title="Use a local AI instead">
             <p>
@@ -186,6 +217,16 @@ export function DisclaimerPage() {
           {localAiAvailable() && " With a local AI (Ollama, LM Studio), your text stays on this computer."}
         </p>
       </Section>
+      {voiceAvailable() && (
+        <Section title="Voice">
+          <p>
+            Voice uses your browser's own speech tools. To turn your speech into text, Chrome sends your voice to Google,
+            Edge to Microsoft and Safari to Apple, under their privacy terms. Voices that aren't installed on your device,
+            such as Edge's "Natural" and Chrome's "Google" voices, send the text they read to that company. SkillPath
+            doesn't record or keep audio: only the text of your messages is saved, as with typed ones.
+          </p>
+        </Section>
+      )}
       <Section title="Your API key">
         <p>
           You're responsible for your API key and for any charges your provider makes. SkillPath encrypts the key on this

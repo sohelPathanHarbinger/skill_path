@@ -2,17 +2,20 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { isAppleMobile, isInstalledApp, promptInstall, useCanInstall } from "../hooks/useInstallPrompt";
 import { openSettingsDialog } from "../hooks/useSettingsDialog";
 import { APP_VERSION, DEVELOPER } from "../lib/appInfo";
+import { voiceAvailable } from "../lib/voice";
 import { BackupPanel } from "./BackupPanel";
 import { AboutPage, DisclaimerPage, HowToUsePage } from "./InfoPages";
 import { Dialog } from "./ui";
+import { VoiceSettings } from "./VoiceSettings";
 
-type Page = "about" | "howto" | "disclaimer" | "backup";
+type Page = "about" | "howto" | "disclaimer" | "backup" | "voice";
 
 const TITLES: Record<Page, string> = {
   about: "About SkillPath",
   howto: "How to use SkillPath",
   disclaimer: "Disclaimer & privacy",
   backup: "Back up & restore",
+  voice: "Voice settings",
 };
 
 /** The ☰ menu in the header, and the pages it opens. */
@@ -69,6 +72,7 @@ export function AppMenu() {
           <Item onClick={() => choose(() => setPage("disclaimer"))}>Disclaimer &amp; privacy</Item>
           <div className="my-1 border-t border-slate-100" />
           <Item onClick={() => choose(openSettingsDialog)}>AI settings</Item>
+          {voiceAvailable() && <Item onClick={() => choose(() => setPage("voice"))}>Voice settings</Item>}
           <Item onClick={() => choose(() => setPage("backup"))}>Back up &amp; restore</Item>
           {canInstall && <Item onClick={() => choose(() => void promptInstall())}>Install app</Item>}
           {showAppleInstall && <Item onClick={() => choose(() => setPage("howto"))}>Add to Home Screen</Item>}
@@ -80,13 +84,19 @@ export function AppMenu() {
       )}
 
       {page && (
-        <Dialog title={TITLES[page]} onClose={() => setPage(null)} size={page === "backup" ? "default" : "wide"}>
+        <Dialog
+          title={TITLES[page]}
+          onClose={() => setPage(null)}
+          size={page === "backup" || page === "voice" ? "default" : "wide"}
+        >
           {page === "about" ? (
             <AboutPage />
           ) : page === "howto" ? (
             <HowToUsePage />
           ) : page === "disclaimer" ? (
             <DisclaimerPage />
+          ) : page === "voice" ? (
+            <VoiceSettings />
           ) : (
             <BackupPanel />
           )}

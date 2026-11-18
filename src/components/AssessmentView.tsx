@@ -3,14 +3,25 @@ import { nextAssessmentTurn } from "../lib/learning";
 import type { AssessmentTurn } from "../lib/schemas";
 import { clearTrackDraft } from "../lib/trackDraft";
 import type { AssessmentExchange, Track, UpdateTrack } from "../lib/types";
+import { canListen } from "../lib/voice/listen";
+import { getVoicePrefs } from "../lib/voice/prefs";
+import { readAloud, stopReading, unlockSpeech } from "../lib/voice/speak";
+import { spokenQuestion } from "../lib/voice/speechText";
 import { AIErrorPanel } from "./AIErrorPanel";
 import { Markdown } from "./Markdown";
 import { BackLink, Badge, Bar, Button, Card, difficultyTone, SIDE_COLUMN, SidePanel, Spinner, WITH_SIDE_PANEL } from "./ui";
+import { DictateButton, ListenButton } from "./VoiceControls";
 
 /** Hard stop in case the assessor never marks the assessment complete. */
 const MAX_QUESTIONS = 12;
 /** Only used to draw the progress bar. */
 const EXPECTED_QUESTIONS = 8;
+
+const questionKey = (trackId: string, index: number) => `assessment:${trackId}:${index}`;
+
+/** What's read aloud for a turn: the feedback on the last answer, then the question and its options. */
+const turnSpeech = (turn: AssessmentTurn) =>
+  spokenQuestion(turn.question_text, turn.question_kind === "multiple_choice" ? turn.options : [], turn.feedback);
 
 export function AssessmentView({ track, update }: { track: Track; update: UpdateTrack }) {
   const [loading, setLoading] = useState(false);
@@ -56,7 +67,19 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [exchanges.length, loading]);
 
+  // With "Read everything aloud" on in Voice settings, read each new question as it arrives.
+  useEffect(() => {
+    if (last && awaitingAnswer && !loading && getVoicePrefs().readAloud) {
+      readAloud(questionKey(track.id, exchanges.length - 1), turnSpeech(last.turn));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exchanges.length, loading]);
+
+  useEffect(() => () => stopReading(), []);
+
   async function submitAnswer(answer: string) {
+    unlockSpeech();
+    stopReading();
     const answered = exchanges.map((ex, i) => (i === exchanges.length - 1 ? { ...ex, answer } : ex));
     await update((t) => ({ ...t, assessment: answered }));
     if (answered.filter((ex) => !ex.turn.is_complete).length >= MAX_QUESTIONS) return;
@@ -88,7 +111,7 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
 
         <div className="space-y-5">
           {exchanges.map((exchange, i) => (
-            <ExchangeView key={i} exchange={exchange} number={i + 1} />
+            <ExchangeView key={i} exchange={exchange} number={i + 1} listenId={questionKey(track.id, i)} />
           ))}
         </div>
 
@@ -124,6 +147,11 @@ export function AssessmentView({ track, update }: { track: Track; update: Update
             <li>
               Press <kbd className="rounded bg-slate-100 px-1 text-xs">Ctrl + Enter</kbd> to submit a written answer.
             </li>
+            {canListen() && (
+              <li>
+                Tap <b>Speak answer</b> to answer out loud, and <b>Listen</b> to hear a question.
+              </li>
+            )}
           </ul>
         </SidePanel>
       </aside>
@@ -201,7 +229,7 @@ const QUALITY: Record<AssessmentTurn["previous_answer_quality"], { icon: string;
   unsure: { icon: "?", className: "bg-slate-200 text-slate-600" },
 };
 
-function ExchangeView({ exchange, number }: { exchange: AssessmentExchange; number: number }) {
+function ExchangeView({ exchange, number, listenId }: { exchange: AssessmentExchange; number: number; listenId: string }) {
   const { turn, answer } = exchange;
   const quality = QUALITY[turn.previous_answer_quality];
 
@@ -223,6 +251,9 @@ function ExchangeView({ exchange, number }: { exchange: AssessmentExchange; numb
             <span className="font-semibold text-slate-500">Question {number}</span>
             <Badge>{turn.question_topic}</Badge>
             <Badge tone={difficultyTone(turn.question_difficulty)}>{turn.question_difficulty}</Badge>
+            <span className="-my-1 ml-auto">
+              <ListenButton id={listenId} text={turnSpeech(turn)} />
+            </span>
           </div>
         )}
         <Markdown text={turn.question_text} />
@@ -302,6 +333,7 @@ function AnswerBox({ turn, onSubmit }: { turn: AssessmentTurn; onSubmit: (answer
           Submit answer
         </Button>
         {dontKnow}
+        {!isCode && <DictateButton value={text} onChange={setText} />}
         <span className="ml-auto hidden text-xs text-slate-400 sm:inline">Ctrl + Enter to submit</span>
       </div>
     </div>

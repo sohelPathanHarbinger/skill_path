@@ -9,10 +9,11 @@ It works with **many AI providers**. **Google Gemini** (`gemini-3.8-flash`, free
 3. **Learning plan.** Ordered modules that skip what the learner already knows and start with the gaps that block their goal.
 4. **Courses & materials.** Video courses, websites, books, docs and practice on different platforms, picked for the learner's goal and gaps.
 5. **Lessons.** A streamed tutor chat per module that explains, gives examples, asks questions and adapts ("explain another way", "go faster", …).
-6. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
-7. **Installable app.** Install it from the browser on Android, iPhone or desktop. Saved tracks open offline, and a new version announces itself with a **Reload** button.
-8. **Private by design.** No account and no server. Tracks stay on the device, the API key is encrypted on the device, and **Back up & restore** moves tracks between devices.
-9. **Help built in.** A ☰ menu with **How to use**, **About**, **Disclaimer & privacy**, **AI settings**, **Back up & restore** and **Install app**.
+6. **Voice.** Talk to the tutor instead of typing and hear its replies read aloud while the text stays on screen, with an optional hands-free mode. Skill-check and quiz questions can be read aloud and answered by speaking. It uses the browser's own speech recognition and voices, so it's free, needs no key and works with any AI.
+7. **Quizzes.** Four questions per module, graded with feedback. Scoring 70% or more completes the module, and the results update the skill profile.
+8. **Installable app.** Install it from the browser on Android, iPhone or desktop. Saved tracks open offline, and a new version announces itself with a **Reload** button.
+9. **Private by design.** No account and no server. Tracks stay on the device, the API key is encrypted on the device, and **Back up & restore** moves tracks between devices.
+10. **Help built in.** A ☰ menu with **How to use**, **About**, **Disclaimer & privacy**, **AI settings**, **Voice settings**, **Back up & restore** and **Install app**.
 
 Designed and developed by **Sohel Pathan**.
 
@@ -237,6 +238,13 @@ Click **Start the lesson**. The tutor teaches in small steps: it explains an ide
 - Use the quick replies to steer the lesson: **Explain that another way**, **Show me an example**, **Give me a practice exercise**, **I know this already, go faster**, **Slow down, I'm lost**.
 - Click **Stop** to cut a long reply short.
 
+**Voice** (Chrome, Edge and Safari; Firefox can read aloud but can't listen):
+
+- Click **Start with voice** to begin, or tap the **mic** next to **Send** at any time. Speak, then pause: your words appear in the box and are sent. Tap the mic again to send straight away.
+- Replies to spoken messages are read aloud as they stream in. Code blocks and tables are shown but not read; the tutor introduces them in words.
+- **Read replies aloud** reads every reply, even when you type. **Hands-free** listens for your answer after each reply, so you don't need to tap. **Listen** under a reply reads it again.
+- Menu (☰) → **Voice settings** sets the language you speak (pick your accent, such as English (India)), the tutor's voice and its speed.
+
 When the tutor says you're ready, switch to the **Quiz** tab.
 
 ### Step 5 — Pass the module quiz (Quiz tab)
@@ -261,6 +269,7 @@ Work through the modules in order. The dashboard shows your progress, best quiz 
 | **About SkillPath** | What the app does, its version and credits |
 | **Disclaimer & privacy** | How AI-generated content, learner data and API keys are handled |
 | **AI settings** | The same popup as the provider name in the header |
+| **Voice settings** | Language, the tutor's voice and speed, **Read everything aloud** and **Hands-free**. Shown when the browser supports speech |
 | **Back up & restore** | Download every track as one JSON file, or restore tracks from one |
 | **Install app** | Shown when the browser can install SkillPath (on iPhone: Safari → **Add to Home Screen**) |
 
@@ -296,8 +305,13 @@ src/
       openaiCompatible.ts  every other provider, via the OpenAI-compatible Chat Completions API
       json.ts              reads JSON out of model replies and validates it
       errors.ts            one error type with learner-friendly messages for every provider
+    voice/
+      listen.ts            speech to text with the browser's speech recognition
+      speak.ts             reads text aloud with the browser's voices, sentence by sentence as replies stream
+      speechText.ts        what to read out of Markdown (skips code blocks and tables)
+      prefs.ts             the learner's voice choices: language, voice, speed, read aloud, hands-free
     settings.ts            settings in use: Settings-popup choices on top of the defaults
-    features.ts            feature switches: localAiSupport turns Ollama and LM Studio on or off
+    features.ts            feature switches: localAiSupport (Ollama, LM Studio) and voiceSupport
     device.ts              tells phones and tablets apart from computers (local AI is computers only)
     secrets.ts             API keys encrypted with AES-GCM and a non-extractable device key
     backup.ts              download all tracks as JSON, and restore them with validation
@@ -310,9 +324,10 @@ src/
   components/              React screens: SettingsDialog, AIQuickSwitch, AIErrorPanel, Home,
                            AssessmentView, BuildingView, Dashboard, ResourcesPanel, ModuleView,
                            TutorChat, QuizPanel, AppMenu (☰ menu), InfoPages (About, How to use,
-                           Disclaimer), BackupPanel, AppStatus (offline banner, update notice)
+                           Disclaimer), BackupPanel, AppStatus (offline banner, update notice),
+                           VoiceControls (mic and Listen buttons), VoiceSettings
   hooks/                   hash router, useTrack, useSettings, useSettingsDialog, useInstallPrompt,
-                           useOnline
+                           useOnline, useVoice
 public/                    logo (favicon.svg) and the PWA icons
 vite.config.ts             Vite, Tailwind, and the PWA manifest + service worker settings
 docs/                      User Guide, Developer Guide, presentation and talking notes
@@ -335,6 +350,7 @@ How it stays reliable across very different AIs:
 - **Pass mark.** `PASS_SCORE` in `src/lib/progress.ts`.
 - **Assessment length cap.** `MAX_QUESTIONS` in `src/components/AssessmentView.tsx`.
 - **Local AI on or off.** `localAiSupport` in `src/lib/features.ts`; see [Local AI](#local-ai-ollama-lm-studio). Phones and tablets never show it.
+- **Voice on or off.** `voiceSupport` in `src/lib/features.ts`. The way the tutor talks in voice mode is `TUTOR_VOICE_NOTE` in `src/lib/prompts.ts`; the languages offered are `LANGUAGES` in `src/lib/voice/prefs.ts`.
 - **Default AI.** `DEFAULT_PROVIDER` in `src/lib/settings.ts`. Its model and effort follow from it: that AI's recommended model, and low effort.
 - **Logo and app icons.** `public/favicon.svg` plus the PNG/ICO icons; the icon list and app colours are in `vite.config.ts`.
 - **About, How to use and Disclaimer text.** `src/components/InfoPages.tsx`.
@@ -356,6 +372,11 @@ How it stays reliable across very different AIs:
 | **"… is out of credit"** | Add credit on the provider's site, or switch to a free option |
 | **"… kept replying in an unexpected format"** | That model struggles with structured replies. Pick a larger model, or a provider with JSON schema support (Claude, OpenAI, Gemini, Groq, Mistral) |
 | A reply stopped halfway | Click **Get reply** or **Try again**. Nothing you've done is lost |
+| No mic button | The browser can't recognise speech (Firefox), or `voiceSupport` is off in `src/lib/features.ts`. Use Chrome, Edge or Safari |
+| **"SkillPath can't use the microphone"** | Allow the microphone for the site (the icon in the address bar). Speech needs HTTPS or `localhost` |
+| **"Speech recognition couldn't reach its online service"** | Chrome and Edge recognise speech online: check the connection. Brave blocks it; use Chrome, Edge or Safari |
+| Speech is misheard | In **Voice settings**, pick the language and accent you speak, such as English (India). You can correct the words in the box before sending |
+| No sound when a reply should be read | Check the device volume, and pick another voice in **Voice settings** → **Test** |
 | `npm run dev` says the port is in use | Another copy is running. Stop it, or open the other URL Vite prints |
 | No **Install app** in the menu | Installing needs a production build (`npm run build` + `npm run preview`, or the deployed site), HTTPS or `localhost`, and Chrome or Edge. On iPhone use Safari → **Add to Home Screen** |
 | A deployed change doesn't show | The service worker serves the cached version until the new one takes over. Click **Reload** on the new-version notice, or close every SkillPath tab |
@@ -368,6 +389,7 @@ How it stays reliable across very different AIs:
 |---|---|
 | To let learners use the app without their own key | One serverless function (Vercel/Netlify/Cloudflare) that holds your key, limits usage per learner and forwards requests; point `src/lib/ai/` at it |
 | Accounts, progress across devices, a teacher view | A database; replace `src/lib/storage.ts` with API calls |
+| More accurate listening or more natural voices | Optional cloud speech on the learner's own key, behind the same functions in `src/lib/voice/listen.ts` and `speak.ts`: Groq Whisper (free tier) for listening, Gemini text-to-speech (free tier) for voices. Browser speech stays the free default |
 
 ## Documentation
 
@@ -383,3 +405,8 @@ How it stays reliable across very different AIs:
 Designed and developed by **Sohel Pathan**.
 
 © 2026 Harbinger. All rights reserved. See [LICENSE](LICENSE).
+
+
+
+Architecture diagram
+Check with Harbinger Academy

@@ -3,9 +3,12 @@ import { generateQuiz, gradeQuiz } from "../lib/learning";
 import { applyMasteryUpdates, clampScore, PASS_SCORE, updateModule } from "../lib/progress";
 import type { QuizGrade } from "../lib/schemas";
 import type { PlanModule, QuizAttempt, Track, UpdateTrack } from "../lib/types";
+import { canListen } from "../lib/voice/listen";
+import { spokenQuestion } from "../lib/voice/speechText";
 import { AIErrorPanel } from "./AIErrorPanel";
 import { Markdown } from "./Markdown";
 import { Badge, Button, Card, Spinner } from "./ui";
+import { DictateButton, ListenButton } from "./VoiceControls";
 
 interface Props {
   track: Track;
@@ -133,6 +136,12 @@ export function QuizPanel({ track, module, update, onBackToLesson, onNextModule 
               Question {i + 1} of {questions.length}
             </span>
             <Badge>{q.subtopic}</Badge>
+            <span className="-my-1 ml-auto">
+              <ListenButton
+                id={`quiz:${module.id}:${current.at}:${i}`}
+                text={spokenQuestion(q.prompt, q.kind === "multiple_choice" ? q.options : [])}
+              />
+            </span>
           </div>
           <Markdown text={q.prompt} />
           {q.kind === "multiple_choice" && q.options.length > 0 ? (
@@ -160,16 +169,23 @@ export function QuizPanel({ track, module, update, onBackToLesson, onNextModule 
               })}
             </div>
           ) : (
-            <textarea
-              value={answers[i] ?? ""}
-              onChange={(e) => setAnswer(i, e.target.value)}
-              rows={q.kind === "code" ? 7 : 3}
-              spellCheck={q.kind !== "code"}
-              placeholder={q.kind === "code" ? "Write your code or answer…" : "Type your answer…"}
-              className={`w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                q.kind === "code" ? "font-mono" : ""
-              }`}
-            />
+            <>
+              <textarea
+                value={answers[i] ?? ""}
+                onChange={(e) => setAnswer(i, e.target.value)}
+                rows={q.kind === "code" ? 7 : 3}
+                spellCheck={q.kind !== "code"}
+                placeholder={q.kind === "code" ? "Write your code or answer…" : "Type your answer…"}
+                className={`w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                  q.kind === "code" ? "font-mono" : ""
+                }`}
+              />
+              {q.kind !== "code" && canListen() && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <DictateButton value={answers[i] ?? ""} onChange={(text) => setAnswer(i, text)} />
+                </div>
+              )}
+            </>
           )}
         </Card>
       ))}

@@ -7,6 +7,12 @@ export const features = {
    * never show it: they can't run a local AI server.
    */
   localAiSupport: false,
+  /**
+   * Voice: talk to the tutor instead of typing and hear its replies, using the browser's
+   * own speech recognition and voices (free, no key, works with any AI). Browsers
+   * without them hide the controls; Firefox, for example, can read aloud but not listen.
+   */
+  voiceSupport: true,
 };
 
 let localAi: boolean | undefined;
